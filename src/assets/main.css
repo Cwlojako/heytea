@@ -1,0 +1,12 @@
+* {
+    padding: 0;
+    margin: 0;
+}
+
+.van-toast .van-toast__icon {
+    font-size: var(--van-toast-icon-size);
+}
+
+.van-popup {
+    background: var(--van-toast-background) !important;
+}
