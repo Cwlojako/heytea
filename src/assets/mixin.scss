@@ -47,13 +47,13 @@
   box-sizing: border-box;
 }
 
-@mixin bottom-line($c: #E6E6E6, $size: 2rpx, $type: solid) {
+@mixin bottom-line($c: #E6E6E6, $size: 2px, $type: solid) {
   content: ' ';
   position: absolute;
   left: 0;
   bottom: 0;
   right: 0;
-  height: 2rpx;
+  height: 2px;
   border-bottom: $size $type $c;
   color: $c;
   transform-origin: 0 100%;
@@ -63,13 +63,13 @@
   }
 }
 
-@mixin top-line($c: #E6E6E6, $size: 2rpx, $type: solid) {
+@mixin top-line($c: #E6E6E6, $size: 2px, $type: solid) {
   content: ' ';
   position: absolute;
   left: 0;
   top: 0;
   right: 0;
-  height: 2rpx;
+  height: 2px;
   border-top: $size $type $c;
   color: $c;
   transform-origin: 0 100%;
@@ -79,14 +79,14 @@
   }
 }
 
-@mixin right-line($c: #E6E6E6, $size: 2rpx, $type: solid) {
+@mixin right-line($c: #E6E6E6, $size: 2px, $type: solid) {
   content: ' ';
   position: absolute;
   top: 0;
   bottom: 0;
   right: 0;
   height: auto;
-  width: 2rpx;
+  width: 2px;
   border-right: $size $type $c;
   color: $c;
   transform-origin: 0 100%;
@@ -96,14 +96,14 @@
   }
 }
 
-@mixin left-line($c: #E6E6E6, $size: 2rpx, $type: solid) {
+@mixin left-line($c: #E6E6E6, $size: 2px, $type: solid) {
   content: ' ';
   position: absolute;
   top: 0;
   bottom: 0;
   left: 0;
   height: auto;
-  width: 2rpx;
+  width: 2px;
   border-left: $size $type $c;
   color: $c;
   transform-origin: 0 100%;

@@ -2,8 +2,10 @@
 import axios from 'axios'
 import { showToast } from 'vant'
 import { useStoreState } from '@/stores'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
+
 const router = useRouter()
+const route = useRoute()
 
 const baseUrl = import.meta.env.VITE_BASE_URL
 const keyword = ref('')
@@ -50,7 +52,8 @@ function toGoods(id) {
 		list: list.value,
 		finished: finished.value
 	})
-	router.push({ name: 'Goods', params: { id } })
+	const { u, p, c } = route.query
+	router.push({ name: 'Goods', params: { id }, query: { u, p, c } })
 }
 
 function onClear() {
@@ -60,9 +63,9 @@ function onClear() {
 
 onActivated(() => {
 	const { keyword: savedKeyword, list: savedList, finished: savedFinished } = storeState.savedState
-  keyword.value = savedKeyword
-  list.value = savedList
-  finished.value = savedFinished
+	keyword.value = savedKeyword
+	list.value = savedList
+	finished.value = savedFinished
 })
 
 onDeactivated(() => {
@@ -93,8 +96,16 @@ onDeactivated(() => {
 				finished-text="没有更多了"
 				@load="loadMore"
 			>
-				<div v-for="item in list" :key="item" class="list-item" @click="toGoods(item.id)">
-					<span class="top_name">{{ item.name }}</span>
+				<div
+					v-for="item in list"
+					:key="item"
+					:class="['list-item', { disabled: !item.is_actived }]"
+					@click="toGoods(item.id)"
+				>
+					<span class="top_name">
+						{{ item.name }}
+						<van-tag type="warning" v-if="!item.is_actived">门店休息中</van-tag>
+					</span>
 					<span class="bottom_address">{{ item.address }}</span>
 				</div>
 			</van-list>
@@ -109,8 +120,8 @@ onDeactivated(() => {
 				<van-steps :active="3" active-color="#000000">
 					<van-step>搜索门店</van-step>
 					<van-step>挑选商品</van-step>
-					<van-step>点击下单</van-step>
-					<van-step>看取茶号</van-step>
+					<van-step>结算下单</van-step>
+					<van-step>查取茶号</van-step>
 				</van-steps>
 			</div>
 		</section>
@@ -171,6 +182,9 @@ onDeactivated(() => {
 		padding: 16px;
 		border-bottom: 1px solid #eee;
 		gap: 5px;
+		&.disabled {
+			background-color: #f7f7f7;
+		}
 		.top_name {
 			font-size: 16px;
 			color: #333;
