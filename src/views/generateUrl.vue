@@ -1,15 +1,15 @@
 <script setup>
 	import { encrypt } from '@/utils/crypto'
 	import { showToast } from 'vant'
+	import { useRoute, useRouter } from 'vue-router'
 	import axios from 'axios'
 
+	const router = useRouter()
 	const baseUrl = import.meta.env.VITE_BASE_URL
 	const price = ref('')
-	const numberVisible = ref(false)
 	const uuid = ref('')
+	const phone = ref('')
 	const url = ref('')
-	const dialogVisible = ref(false)
-	const token = ref('')
 	const coupon = ref('')
 	const couponVisible = ref(false)
 	const list = ref([])
@@ -26,14 +26,6 @@
 		}
 	})
 
-	function onInput(value) {
-		price.value += value
-	}
-
-	function onDelete() {
-		price.value = price.value.slice(0, -1)
-	}
-
 	function onGetUuid() {
 		uuid.value = Array.from({ length: 16 }, () =>
 			Math.floor(Math.random() * 16).toString(16)
@@ -42,7 +34,11 @@
 
 	function onGenerateUrl() {
 		const p = encodeURIComponent(encrypt(price.value))
-		const res = `${window.location.origin}/store?u=${uuid.value}&p=${p}&c=${coupon.value}`
+		const ph = encodeURIComponent(encrypt(phone.value))
+		let res = `${window.location.origin}/store?u=${uuid.value}&p=${p}&ph=${ph}`
+		if (coupon.value) {
+			res += `&c=${coupon.value}`
+		}
 		url.value = res
 	}
 
@@ -62,17 +58,6 @@
 		document.body.removeChild(textarea)
 	}
 
-	function onSetToken() {
-		dialogVisible.value = true
-	}
-
-	async function onConfirmSetToken() {
-		await axios.get(`${baseUrl}/setToken?token=${token.value}`)
-		showToast('设置成功')
-		dialogVisible.value = false
-		token.value = ''
-	}
-
 	function loadMore() {
 		if (!finished.value) {
 			onGetList(true)
@@ -87,7 +72,7 @@
 		} else {
 			pageData.value.page = 1
 		}
-		let { data: res } = await axios.post(`${baseUrl}/findCoupon`, pageData.value)
+		let { data: res } = await axios.post(`${baseUrl}/findCoupon?phone=${phone.value}`, pageData.value)
 		if (res.code === 200) {
 			const { records, total } = res.data
 			let _list = isNext ? list.value.concat(records) : records
@@ -130,8 +115,16 @@
 		}
 	}
 
+	function toAccountSetting() {
+		router.push({ name: 'AccountSetting' })
+	}
+
 	const isReady = computed(() => {
-		return price.value && uuid.value
+		return price.value && uuid.value && phone.value && phone.value.length === 11
+	})
+
+	const couponReady = computed(() => {
+		return price.value && phone.value && phone.value.length === 11
 	})
 
 	const LabelText = computed(() => {
@@ -148,21 +141,25 @@
 
 <template>
 	<div class="wrapper">
-		<van-field label='价格' v-model="price" readonly clickable @touchstart.stop="numberVisible = true"/>
 		<van-field label='UUID' v-model="uuid" readonly>
 			<template #button>
 				<van-button size="small" type="primary" @click="onGetUuid">获取UUID</van-button>
 			</template>
 		</van-field>
+		<van-field label="价格" v-model="price" type="number" placeholder="请输入喜茶原价"/>
+		<van-field label="账号" v-model="phone" type="number" placeholder="请输入手机号账号"/>
 		<van-field
 			label='优惠券'
 			v-model="coupon"
 			readonly
 			placeholder="优先输入价格"
-			:disabled="!price"
+			:disabled="!couponReady"
 		>
-		<template #button>
-				<van-button size="small" type="primary" @click="couponVisible = true" :disabled="!price">选择优惠券</van-button>
+			<template #button>
+				<div class="btn_box">
+					<van-icon class="clear_icon" v-if="coupon" name="clear" size="18" @click="coupon = ''"/>
+					<van-button size="small" type="primary" @click="couponVisible = true" :disabled="!couponReady">选择优惠券</van-button>
+				</div>
 			</template>
 		</van-field>
 
@@ -172,33 +169,8 @@
 			<van-button size="small" type="success" @click="onCopyUrl(url)">复制链接</van-button>
 		</div>
 		
-		<van-button type="warning" block style="margin-top: 10px;" @click="onSetToken">设 置 Token</van-button>
-		<van-dialog
-			v-model:show="dialogVisible"
-			title="设置Token"
-			show-cancel-button
-			@confirm="onConfirmSetToken"
-		>
-			<van-field
-				v-model="token"
-				rows="1"
-				autosize
-				label="Token"
-				type="textarea"
-				placeholder="请输入"
-			/>
-		</van-dialog>
-
-		<van-number-keyboard
-			:show="numberVisible"
-			theme="custom"
-			:extra-key="['00', '.']"
-			close-button-text="完成"
-			@blur="numberVisible = false"
-			@input="onInput"
-			@delete="onDelete"
-		/>
-
+		<van-button type="warning" block style="margin-top: 10px;" @click="toAccountSetting">账 号 管 理</van-button>
+		
 		<van-popup v-model:show="couponVisible" position="bottom">
 			<div class="popup_content_wrap">
 				<div class="list_box">
@@ -267,6 +239,11 @@
 			word-break: break-all;
 			flex: 1;
 		}
+	}
+	.btn_box {
+		display: flex;
+		align-items: center;
+		gap: 10px;
 	}
 	::v-deep .van-popup {
 		background: #fff !important;

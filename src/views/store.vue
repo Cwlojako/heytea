@@ -3,6 +3,8 @@ import axios from 'axios'
 import { showToast } from 'vant'
 import { useStoreState } from '@/stores'
 import { useRouter, useRoute } from 'vue-router'
+import { debounce } from 'lodash'
+import { decrypt } from '@/utils/crypto'
 
 const router = useRouter()
 const route = useRoute()
@@ -14,6 +16,7 @@ const loading = ref(false)
 const finished = ref(true)
 const showMaskLoading = ref(false)
 const search = ref()
+const phone = decrypt(decodeURIComponent(route.query.ph))
 
 const storeState = useStoreState()
 
@@ -25,7 +28,7 @@ async function onSearch(isNext = false) {
 		loadShopIds = list.value.map(m => m.id)
 	}
 	!isNext && (showMaskLoading.value = true)
-	let params = isNext ? { name: keyword.value, loadShopIds } : { name: keyword.value }
+	let params = isNext ? { name: keyword.value, loadShopIds, phone } : { name: keyword.value, phone }
 	let { data: res } = await axios.post(`${baseUrl}/findStore`, params)
 	if (res.code === 0) {
 		const { list: _list, isLast } = res.data
@@ -52,14 +55,16 @@ function toGoods(id) {
 		list: list.value,
 		finished: finished.value
 	})
-	const { u, p, c } = route.query
-	router.push({ name: 'Goods', params: { id }, query: { u, p, c } })
+	const { u, p, c, ph } = route.query
+	router.push({ name: 'Goods', params: { id }, query: { u, p, c, ph } })
 }
 
 function onClear() {
 	onSearch(false)
 	search.value.blur()
 }
+
+const debouncedSearch = debounce(() => onSearch(false), 300)
 
 onActivated(() => {
 	const { keyword: savedKeyword, list: savedList, finished: savedFinished } = storeState.savedState
@@ -83,6 +88,7 @@ onDeactivated(() => {
 			shape="round"
 			background="#fff"
 			@search="(val) => onSearch(false)"
+			@update:model-value="debouncedSearch"
 			@clear="onClear"
 		/>
 		<section class="list_box">
@@ -149,7 +155,7 @@ onDeactivated(() => {
 			bottom: 0;
 			right: 0;
 			@include flexCenter;
-			background-color: rgba(0,0,0,.92);
+			background-color: rgba(0,0,0,.5);
 			z-index: 99;
 		}
 		.step_box {

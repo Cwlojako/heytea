@@ -11,6 +11,7 @@
 	const limitPrice = decrypt(decodeURIComponent(route.query.p))
 	const uuid = route.query.u
 	const couponId = route.query.c
+	const phone = decrypt(decodeURIComponent(route.query.ph))
 	const baseUrl = import.meta.env.VITE_BASE_URL
 	const keyword = ref('')
 	const list = ref([])
@@ -25,11 +26,13 @@
 	const carBox1 = ref()
 	const goodsItem = ref()
 	const btnLoading = ref(false)
+	const remarkVisible = ref(false)
+	const remark = ref('')
 
 	async function getGoods(keyword = '') {
 		showSkeleton.value = true
 		const { data: res } = await axios.post(`${baseUrl}/findGoods`, { shopId: route.params.id, name: keyword })
-		list.value = res.data
+		list.value = res.data.filter(f => !f.combo_meal)
 		showSkeleton.value = false
 		nextTick(() => {
 			list.value.forEach((e, idx) => {
@@ -168,6 +171,10 @@
 	}
 
 	const onSettle = debounce(async function() {
+		remarkVisible.value = true
+	}, 500, { leading: true })
+
+	async function onRemarkConfirm() {
 		btnLoading.value = true
 		if (+allPrice.value > +limitPrice) {
 			showToast({ message: `超出限制金额`, type: 'fail' })
@@ -193,21 +200,32 @@
 				user_infos: []
 			}
 		})
-		const { data: res } = await axios.post(`${baseUrl}/settle`, { shopId: route.params.id, price: allPrice.value, products, signal: uuid, couponId })
+		const { data: res } = await axios.post(`${baseUrl}/settle`, 
+			{ 
+				shopId: route.params.id,
+				price: allPrice.value,
+				products, 
+				signal: uuid,
+				couponId,
+				phone,
+				remark: remark.value
+			})
 		showToast(res.message)
 		btnLoading.value = false
 		if (res.code === 200) {
 			shopCarListVisible.value && (shopCarListVisible.value = false)
 			shopCarList.value = []
-			router.push({ name: 'OrderDetail', params: { u: uuid } })
+			router.push({ name: 'OrderDetail', params: { u: uuid }, query: { ph: route.query.ph } })
 		}
-	}, 500, { leading: true })
+	}
 
 	useClickAway([carBox, carBox1], () => {
 		if (shopCarListVisible.value) {
 			shopCarListVisible.value = false
 		}
 	}, { eventName: 'touchstart' })
+
+	const debouncedSearch = debounce(() => getGoods(keyword.value), 300)
 
 	const totalPrice = computed(() => {
 		return (productDetail.value.price * count.value).toFixed(2)
@@ -250,6 +268,7 @@
 				shape="round"
 				background="#fff"
 				@search="(val) => getGoods(val)"
+				@update:model-value="debouncedSearch"
 				@clear="(e) => getGoods('')"
 			/>
 		</section>
@@ -322,7 +341,10 @@
 			<div :class="['mask', { visible: shopCarListVisible }]">
 				<div 
 					class="shop_car_list_box"
-					:style="{ height: shopCarListVisible ? `${shopCarList.length * 140}px` : 0 }"
+					:style="{ 
+						height: shopCarListVisible ? `${shopCarList.length * 150}px` : 0,
+						padding: shopCarListVisible ? '16px' : 0
+					}"
 					ref="carBox1"
 				>
 					<div class="shop_car_list_item" v-for="item in shopCarList" :key="item.uuid">
@@ -381,11 +403,30 @@
 				</section>
 			</div>
 		</van-popup>
+
+		<van-dialog
+            v-model:show="remarkVisible"
+            title="备注信息"
+            show-cancel-button
+			confirmButtonText="继续下单"
+			cancelButtonText="取消"
+            @confirm="onRemarkConfirm"
+        >
+			<van-field
+                label="备注"
+                v-model="remark"
+                placeholder="无需备注请点击继续下单"
+            />
+		</van-dialog>
 	</div>
 </template>
 
 <style scoped lang="scss">
 .goods_wrapper {
+	::v-deep .van-dialog__header {
+		background: #fff !important;
+		padding: 16px 0;
+	}
 	height: 100vh;
 	box-sizing: border-box;
 	overflow-y: hidden;
@@ -479,7 +520,7 @@
 				color: #333;
 			}
 			.desc_area {
-				@include ellipsis_n(3);
+				@include ellipsis_n(2);
 				font-size: 12px;
 				color: #999;
 			}
@@ -554,14 +595,18 @@
 				background-color: #fff;
 				overflow: hidden;
 				box-sizing: border-box;
-				padding: 0 16px;
 				border-top: 1px solid #eee;
 				border-radius: 20px 20px 0 0;
 				z-index: 11;
+				display: flex;
+				flex-direction: column;
+				justify-content: space-around;
+				max-height: 80vh;
+				overflow-y: auto;
+				gap: 16px;
 				.shop_car_list_item {
 					display: flex;
 					gap: 16px;
-					padding-top: 16px;
 					.right_area {
 						flex: 1;
 						color: #191919;
@@ -573,6 +618,7 @@
 							padding: 5px 10px;
 							line-height: 1.5;
 							border-radius: 5px;
+							box-sizing: border-box;
 						}
 						.price_count {
 							@include flexYCenter(space-between);

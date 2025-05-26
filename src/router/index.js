@@ -3,7 +3,6 @@ import axios from 'axios'
 
 const baseUrl = import.meta.env.VITE_BASE_URL
 
-
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -15,11 +14,11 @@ const router = createRouter({
         keepAlive: true
       },
       beforeEnter: async (to, from, next) => {
-        const u = to.query.u
+        const { u, ph } = to.query
         if (u) {
-          const { data: res } = await axios.get(`${baseUrl}/checkOrder?signal=${u}`)
+          const { data: res } = await axios.get(`${baseUrl}/checkOrder?signal=${u}&ph=${ph}`)
           if (res.data) {
-            next({ name: 'OrderDetail', params: { u } })
+            next({ name: 'OrderDetail', params: { u }, query: { ph } })
           } else {
             next()
           }
@@ -36,11 +35,11 @@ const router = createRouter({
         keepAlive: true
       },
       beforeEnter: async (to, from, next) => {
-        const u = to.query.u
+        const { u, ph } = to.query
         if (u) {
-          const { data: res } = await axios.get(`${baseUrl}/checkOrder?signal=${u}`)
+          const { data: res } = await axios.get(`${baseUrl}/checkOrder?signal=${u}&ph=${ph}`)
           if (res.data) {
-            next({ name: 'OrderDetail', params: { u } })
+            next({ name: 'OrderDetail', params: { u }, query: { ph } })
           } else {
             next()
           }
@@ -55,7 +54,7 @@ const router = createRouter({
       component: () => import('@/views/goods.vue')
     },
     {
-      path: '/generateUrl',
+      path: '/setting',
       name: 'GenerateUrl',
       component: () => import('@/views/generateUrl.vue')
     },
@@ -63,6 +62,11 @@ const router = createRouter({
       path: '/orderDetail/:u',
       name: 'OrderDetail',
       component: () => import('@/views/orderDetail.vue')
+    },
+    {
+      path: '/accountSetting/',
+      name: 'AccountSetting',
+      component: () => import('@/views/accountSetting.vue')
     },
     {
       path: '/404',

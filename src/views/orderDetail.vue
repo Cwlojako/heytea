@@ -1,17 +1,31 @@
 <script setup>
     import axios from 'axios'
-    import { showToast } from 'vant'
+    import { showToast, showLoadingToast, closeToast } from 'vant'
 	import { useRoute } from 'vue-router'
+    import { decrypt } from '@/utils/crypto'
 
     const baseUrl = import.meta.env.VITE_BASE_URL
     const route = useRoute()
     const orderInfo = ref({})
-
+    const expectTimeObj = ref({})
+    const phone = decrypt(decodeURIComponent(route.query.ph))
     async function getOrderDetail() {
         const { u } = route.params
-        const { data: res } = await axios.get(`${baseUrl}/orderDetail?signal=${u}`)
-        if (res.code === 200) {
-            orderInfo.value = res.data.data.orderInfo
+        const { data: res } = await axios.get(`${baseUrl}/orderDetail?signal=${u}&phone=${phone}`)
+        if (res.code === 0 || res.code === 200) {
+            orderInfo.value = res.data.orderInfo
+        } else {
+            showToast({ message: res.message, type: 'fail' })
+        }
+    }
+
+    async function getExpectTime() {
+        const { id, no } = orderInfo.value
+        showLoadingToast({ message: '刷新中...', duration: 0 })
+        const { data: res } = await axios.get(`${baseUrl}/getExpectTime?orderId=${id}&orderNo=${no}&phone=${phone}`)
+        if (res.code === 0 || res.code === 200) {
+            closeToast()
+            expectTimeObj.value = res.data[0]
         } else {
             showToast({ message: res.message, type: 'fail' })
         }
@@ -39,19 +53,57 @@
         }
     })
 
-    onMounted(() => {
-        getOrderDetail()
+    const expectText = computed(() => {
+        if (!expectTimeObj.value || !Object.keys(expectTimeObj.value).length) {
+            return '下单成功请稍等...'
+        } else {
+            const { completedAt = null } = orderInfo.value
+            const { totalCups, expectMakingTime } = expectTimeObj.value
+            return +expectMakingTime === 0 && !!completedAt ? `已制作完成，请取茶！` : `${totalCups}杯制作中，很快就好，预计等待${expectMakingTime}分钟`
+        }
+    })
+
+    const isRefund = computed(() => {
+        const { button } = orderInfo.value
+        return button && button.length && button.some(s => s.code === 'refund_detail')
+    })
+
+    const isMaked = computed(() => {
+        const { completedAt = null } = orderInfo.value
+        const { totalCups, expectMakingTime } = expectTimeObj.value
+        return +expectMakingTime === 0 && !!completedAt
+    })
+
+    onMounted(async () => {
+        await getOrderDetail()
+        this.interval = setInterval(() => {
+            getExpectTime()
+        }, 3000);
     })
 </script>
 
 <template>
     <div class="wrapper">
-        <section class="pick_no_box">
+        <section class="refund_box" v-if="isRefund">
+            <span class='text'>已退款取消</span>
+        </section>
+        <section class="pick_no_box" v-else>
             <p class="text">取茶号</p>
             <div class="number_box" v-if="orderInfo.pickup_no">
                 <span class="number" v-for="i in orderInfo.pickup_no.split('')">
                     {{ i }}
                 </span>
+            </div>
+            <div class="expect_box">
+                <span>{{ expectText }}</span>
+                <van-icon
+                    v-if="!isMaked"
+                    name="replay"
+                    color="#1989fa"
+                    size="18"
+                    style="margin-left: 5px;"
+                    @click="getExpectTime"
+                />
             </div>
         </section>
         <section class="product_box">
@@ -105,6 +157,19 @@
     overflow: auto;
     padding: 0 16px 16px;
     color: #343434;
+    .refund_box {
+        @include flexCenterColumn;
+        background: #fff;
+        margin: 80px auto 0;
+        padding: 16px 0;
+        box-sizing: border-box;
+        text-align: center;
+        height: 150px;
+        border-radius: 2px;
+        font-size: 20px;
+        letter-spacing: 2px;
+        font-weight: bold;
+    }
     .pick_no_box {
         @include flexCenterColumn;
         background: #fff;
@@ -128,6 +193,9 @@
                 display: inline-block;
                 border-radius: 5px;
             }
+        }
+        .expect_box {
+            margin-top: 10px;;
         }
     }
     .product_box {
