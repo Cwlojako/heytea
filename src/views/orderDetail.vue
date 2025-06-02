@@ -76,9 +76,13 @@
 
     onMounted(async () => {
         await getOrderDetail()
-        this.interval = setInterval(() => {
+        this.timeout = setTimeout(() => {
             getExpectTime()
         }, 3000);
+    })
+
+    onBeforeUnmount(() => {
+        clearTimeout(this.timeout)
     })
 </script>
 

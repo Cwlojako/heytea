@@ -19,6 +19,8 @@
 		page: 1,
 		size: 10
 	})
+	const closeUrlVisible = ref(false)
+	const closeUrl = ref('')
 
 	watch(couponVisible, (newVal) => {
 		if (newVal) {
@@ -32,7 +34,7 @@
 		).join('')
 	}
 
-	function onGenerateUrl() {
+	async function onGenerateUrl() {
 		const p = encodeURIComponent(encrypt(price.value))
 		const ph = encodeURIComponent(encrypt(phone.value))
 		let res = `${window.location.origin}/store?u=${uuid.value}&p=${p}&ph=${ph}`
@@ -40,6 +42,13 @@
 			res += `&c=${coupon.value}`
 		}
 		url.value = res
+		let params = {
+			uuid: uuid.value,
+			price: price.value,
+			phone: phone.value,
+			couponId: coupon.value || ''
+		}
+		await axios.post(`${baseUrl}/generateLink`, params)
 	}
 
 	function onCopyUrl(text) {
@@ -119,6 +128,18 @@
 		router.push({ name: 'AccountSetting' })
 	}
 
+	async function onConfirmCloseUrl() {
+		if (!closeUrl.value) {
+			showToast('请输入要关闭的链接')
+			return
+		}
+		const queryParams = new URLSearchParams(new URL(closeUrl.value).search)
+		const uuid = queryParams.get('u')
+		await axios.post(`${baseUrl}/closeLink`, { uuid })
+		showToast('链接已关闭')
+		closeUrl.value = ''
+	}
+
 	const isReady = computed(() => {
 		return price.value && uuid.value && phone.value && phone.value.length === 11
 	})
@@ -170,7 +191,7 @@
 		</div>
 		
 		<van-button type="warning" block style="margin-top: 10px;" @click="toAccountSetting">账 号 管 理</van-button>
-		
+		<van-button type="danger" block style="margin-top: 10px;" @click="closeUrlVisible = true">关 闭 链 接</van-button>
 		<van-popup v-model:show="couponVisible" position="bottom">
 			<div class="popup_content_wrap">
 				<div class="list_box">
@@ -220,6 +241,20 @@
 				</div>
 			</div>
 		</van-popup>
+
+		<van-dialog
+            v-model:show="closeUrlVisible"
+            title="关闭链接"
+            show-cancel-button
+            @confirm="onConfirmCloseUrl"
+        >
+            <van-field
+                label="链接"
+				type="textarea"
+                v-model="closeUrl"
+                placeholder="请输入"
+            />
+        </van-dialog>
 	</div>
 	
 </template>
