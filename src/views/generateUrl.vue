@@ -13,14 +13,9 @@
 	const coupon = ref('')
 	const couponVisible = ref(false)
 	const list = ref([])
-	const loading = ref(false)
-	const finished = ref(true)
-	const pageData = ref({
-		page: 1,
-		size: 10
-	})
 	const closeUrlVisible = ref(false)
 	const closeUrl = ref('')
+	const tabsActive = ref('usable')
 
 	watch(couponVisible, (newVal) => {
 		if (newVal) {
@@ -67,43 +62,18 @@
 		document.body.removeChild(textarea)
 	}
 
-	function loadMore() {
-		if (!finished.value) {
-			onGetList(true)
-		}
-	}
-
-	async function onGetList(isNext = false) {
-		loading.value = true
-		finished.value = false
-		if (isNext) {
-			pageData.value.page++
-		} else {
-			pageData.value.page = 1
-		}
-		let { data: res } = await axios.post(`${baseUrl}/findCoupon?phone=${phone.value}`, pageData.value)
+	async function onGetList() {
+		let { data: res } = await axios.post(`${baseUrl}/findCoupon?phone=${phone.value}&price=${price.value}`)
 		if (res.code === 200) {
-			const { records, total } = res.data
-			let _list = isNext ? list.value.concat(records) : records
-			_list.forEach(e => {
-				e.checked = e.id == coupon.value
-				if (e.couponType == 0 && e.thresholdText !== '无门槛') {
-					const regex = /(\d+)(\.\d+)?/
-					const match = e.thresholdText.match(regex)
-					console.log(match && price.value < +match[0])
-					if (match && price.value < +match[0]) {
-						e.disabled = true
-					}
+			list.value = res.data.map(m => {
+				return {
+					...m,
+					checked: m.id == coupon.value
 				}
 			})
-			list.value = _list
-			finished.value = _list.length >= total
-			loading.value = false
 			
 		} else {
 			showToast({ message: res.message, type: 'fail' })
-			loading.value = false
-			finished.value = true
 		}
 	}
 
@@ -158,6 +128,12 @@
 			}
 		}
 	})
+
+	const tabList = computed(() => {
+		return (idx, list) => {
+			return list.filter(item => idx === 0 ? !item.disabled : item.disabled)
+		}
+	})
 </script>
 
 <template>
@@ -194,47 +170,47 @@
 		<van-button type="danger" block style="margin-top: 10px;" @click="closeUrlVisible = true">关 闭 链 接</van-button>
 		<van-popup v-model:show="couponVisible" position="bottom">
 			<div class="popup_content_wrap">
-				<div class="list_box">
-					<van-list
-						v-model:loading="loading"
-						:finished="finished"
-						finished-text="没有更多了"
-						@load="loadMore"
-						offset="100"
-					>
-						<div
-							v-for="item in list"
-							:key="item.id"
-							:class="['list_item', { disabled: item.disabled }]"
-						>
-							<div v-if="item.disabled" class="disabled-badge">不可用</div>
-							<div class="left_area">
-								<section>
-									<span class="number">{{ item.discountText }}</span>
-									<span class="unit">{{ item.discountUnit }}</span>
-								</section>
-								<section>
-									<span class="cond">{{ item.thresholdText }}</span>
-								</section>
-							</div>
-							<div class="right_area">
-								<section>
-									<div class="name">
-										<van-tag plain type="primary" v-if="item.bizLabels.length">{{ LabelText(item.bizLabels[0]) }}</van-tag>
-										<span>{{ item.name }}</span>
-									</div>
-									<div class="time">
-										<span>{{ item.period_start }} ~ {{ item.period_end }}</span>
-										<p class="expire" v-if="item.soon_expire">{{ item.periodText }}</p>
-									</div>
-								</section>
-								<section>
-									<van-checkbox v-model="item.checked" @change="(val) => onChecked(item)" checked-color="#131313" :disabled="item.disabled"></van-checkbox>
-								</section>
+				<van-tabs color="#000">
+					<van-tab :title="idx === 0 ? '可 用' : '不 可 用'" v-for="(item, idx) in 2" :key="idx">
+						<div class="empty_box"  v-if="!tabList(idx, list).length">
+							<van-empty image="search" :description="idx === 0 ? '暂无可用优惠券' : '暂无不可用优惠券'"/>
+						</div>
+						<div class="list_box" v-else>
+							<div
+								v-for="item in tabList(idx, list)"
+								:key="item.id"
+								:class="['list_item', { disabled: item.disabled }]"
+							>
+								<div v-if="item.disabled" class="disabled-badge">不可用</div>
+								<div class="left_area">
+									<section>
+										<span class="number">{{ item.discountText }}</span>
+										<span class="unit">{{ item.discountUnit }}</span>
+									</section>
+									<section>
+										<span class="cond">{{ item.thresholdText }}</span>
+									</section>
+								</div>
+								<div class="right_area">
+									<section>
+										<div class="name">
+											<van-tag plain type="primary" v-if="item.bizLabels.length">{{ LabelText(item.bizLabels[0]) }}</van-tag>
+											<span>{{ item.name }}</span>
+										</div>
+										<div class="time">
+											<span>{{ item.period_start }} ~ {{ item.period_end }}</span>
+											<p class="expire" v-if="item.soon_expire">{{ item.periodText }}</p>
+										</div>
+									</section>
+									<section>
+										<van-checkbox v-model="item.checked" @change="(val) => onChecked(item)" checked-color="#131313" :disabled="item.disabled"></van-checkbox>
+									</section>
+								</div>
 							</div>
 						</div>
-					</van-list>
-				</div>
+					</van-tab>
+				</van-tabs>
+				
 				<div class="bottom_btn">
 					<van-button @click="onCancel">取 消</van-button>
 					<van-button color="#131313" @click="onConfirm">确 认</van-button>
@@ -289,67 +265,76 @@
 		background: #f1f1f1;
 		box-sizing: border-box;
 		position: relative;
-		.list_box {
-			height: calc(100% - 65px - env(safe-area-inset-bottom));
-			overflow-y: auto;
-			box-sizing: border-box;
-			padding: 16px;
-			.list_item {
-				@include flexYCenter;
-				position: relative;
-				margin-bottom: 10px;
-				background: #fff;
-				min-height: 100px;
-				border-radius: 5px;
-				box-sizing: border-box;
-				padding: 16px 0;
-				&.disabled {
-					opacity: 0.6;
-				}
-				.disabled-badge {
-					position: absolute;
-					top: 0;
-					right: 0;
-					background: rgba(0, 0, 0, 0.6);
-					color: #fff;
-					font-size: 12px;
-					padding: 2px 6px;
-					border-radius: 0 5px 0 5px;
-					z-index: 1;
-				}
-				.left_area {
-					@include flexCenterColumn;
-					flex: 0 0 120px;
-					color: #191919;
-					.number {
-						font-size: 28px;
-						font-weight: bold;
-					}
-					.unit {
-						font-size: 14px;
-					}
-					.cond {
-						font-size: 12px;
-					}
-				}
-				.right_area {
-					flex: 1;
-					@include flexYCenter(space-between);
-					border-left: 1px dashed #ccc;
-					padding: 0 18px;
-					.name {
-						font-size: 14px;
-						.van-tag {
-							margin-right: 5px;
-							display: inline-block;
-							vertical-align: text-bottom;
+		overflow: hidden;
+		::v-deep .van-tabs {
+			height: 100%;
+			.van-tabs__content {
+				height: calc(100% - 44px - 65px);
+				overflow: auto;
+				.list_box {
+					box-sizing: border-box;
+					padding: 16px;
+					.list_item {
+						@include flexYCenter;
+						position: relative;
+						margin-bottom: 10px;
+						background: #fff;
+						min-height: 100px;
+						border-radius: 5px;
+						box-sizing: border-box;
+						padding: 16px 0;
+						&:last-child {
+							margin-bottom: 0;
 						}
-					}
-					.time {
-						font-size: 12px;
-						margin-top: 10px;
-						.expire {
-							color: #ee3f4d;
+						&.disabled {
+							opacity: 0.6;
+						}
+						.disabled-badge {
+							position: absolute;
+							top: 0;
+							right: 0;
+							background: rgba(0, 0, 0, 0.6);
+							color: #fff;
+							font-size: 12px;
+							padding: 2px 6px;
+							border-radius: 0 5px 0 5px;
+							z-index: 1;
+						}
+						.left_area {
+							@include flexCenterColumn;
+							flex: 0 0 120px;
+							color: #191919;
+							.number {
+								font-size: 28px;
+								font-weight: bold;
+							}
+							.unit {
+								font-size: 14px;
+							}
+							.cond {
+								font-size: 12px;
+							}
+						}
+						.right_area {
+							flex: 1;
+							@include flexYCenter(space-between);
+							border-left: 1px dashed #ccc;
+							padding: 0 18px;
+							.name {
+								font-size: 14px;
+								.van-tag {
+									margin-right: 5px;
+									display: inline-block;
+									vertical-align: text-bottom;
+								}
+							}
+							.time {
+								font-size: 12px;
+								margin-top: 10px;
+								.expire {
+									color: #ee3f4d;
+								}
+							}
 						}
 					}
 				}
