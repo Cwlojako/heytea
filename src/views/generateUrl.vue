@@ -15,10 +15,12 @@
 	const list = ref([])
 	const closeUrlVisible = ref(false)
 	const closeUrl = ref('')
-	const tabsActive = ref('usable')
+	const urlDialog = ref(false)
+	const tabsActive = ref(0)
 
 	watch(couponVisible, (newVal) => {
 		if (newVal) {
+			tabsActive.value = 0
 			onGetList(false)
 		}
 	})
@@ -37,13 +39,18 @@
 			res += `&c=${coupon.value}`
 		}
 		url.value = res
+		urlDialog.value = true
 		let params = {
 			uuid: uuid.value,
 			price: price.value,
 			phone: phone.value,
 			couponId: coupon.value || ''
 		}
+		uuid.value = ''
+		price.value = ''
+		coupon.value = ''
 		await axios.post(`${baseUrl}/generateLink`, params)
+		
 	}
 
 	function onCopyUrl(text) {
@@ -99,15 +106,16 @@
 	}
 
 	async function onConfirmCloseUrl() {
-		if (!closeUrl.value) {
-			showToast('请输入要关闭的链接')
-			return
-		}
-		const queryParams = new URLSearchParams(new URL(closeUrl.value).search)
-		const uuid = queryParams.get('u')
-		await axios.post(`${baseUrl}/closeLink`, { uuid })
+		const urls = closeUrl.value.split(';')
+		const uuids = urls.map(e => {
+			const queryParams = new URLSearchParams(new URL(e).search)
+			const uuid = queryParams.get('u')
+			return uuid
+		})
+		await axios.post(`${baseUrl}/closeLink`, { uuids })
 		showToast('链接已关闭')
 		closeUrl.value = ''
+		closeUrlVisible.value = false
 	}
 
 	const isReady = computed(() => {
@@ -161,16 +169,12 @@
 		</van-field>
 
 		<van-button type="primary" block style="margin-top: 10px;" :disabled="!isReady" @click="onGenerateUrl">生 成 链 接</van-button>
-		<div class="url-box" v-if="url">
-			<p class="url">{{ url }}</p>
-			<van-button size="small" type="success" @click="onCopyUrl(url)">复制链接</van-button>
-		</div>
-		
+
 		<van-button type="warning" block style="margin-top: 10px;" @click="toAccountSetting">账 号 管 理</van-button>
 		<van-button type="danger" block style="margin-top: 10px;" @click="closeUrlVisible = true">关 闭 链 接</van-button>
 		<van-popup v-model:show="couponVisible" position="bottom">
 			<div class="popup_content_wrap">
-				<van-tabs color="#000">
+				<van-tabs color="#000" v-model:active="tabsActive">
 					<van-tab :title="idx === 0 ? '可 用' : '不 可 用'" v-for="(item, idx) in 2" :key="idx">
 						<div class="empty_box"  v-if="!tabList(idx, list).length">
 							<van-empty image="search" :description="idx === 0 ? '暂无可用优惠券' : '暂无不可用优惠券'"/>
@@ -181,7 +185,10 @@
 								:key="item.id"
 								:class="['list_item', { disabled: item.disabled }]"
 							>
-								<div v-if="item.disabled" class="disabled-badge">不可用</div>
+								<div v-if="item.disabled" class="disabled-badge">
+									不可用
+									<span v-if="item.disabledText">{{ `,${item.disabledText}` }}</span>
+								</div>
 								<div class="left_area">
 									<section>
 										<span class="number">{{ item.discountText }}</span>
@@ -210,7 +217,6 @@
 						</div>
 					</van-tab>
 				</van-tabs>
-				
 				<div class="bottom_btn">
 					<van-button @click="onCancel">取 消</van-button>
 					<van-button color="#131313" @click="onConfirm">确 认</van-button>
@@ -218,18 +224,36 @@
 			</div>
 		</van-popup>
 
-		<van-dialog
+		<van-popup
             v-model:show="closeUrlVisible"
-            title="关闭链接"
-            show-cancel-button
-            @confirm="onConfirmCloseUrl"
+			position="bottom"
+			:style="{ height: '60vh' }"
+			@close="closeUrl = ''"
+			safe-area-inset-bottom
         >
-            <van-field
-                label="链接"
-				type="textarea"
-                v-model="closeUrl"
-                placeholder="请输入"
-            />
+			<div class="popup_content">
+				<van-field
+					label="链接："
+					type="textarea"
+					autosize
+					v-model="closeUrl"
+					:spellcheck="false"
+					placeholder="请输入，如若需要同时关闭多个链接，请用英文分号;分隔，如：链接1;链接2"
+				/>
+				<div class="btn">
+					<van-button type="warning" block :disabled="!closeUrl" @click="onConfirmCloseUrl">确 认 关 闭</van-button>
+				</div>
+			</div>
+            
+        </van-popup>
+
+		<van-dialog
+            v-model:show="urlDialog"
+            title="链接"
+            confirm-button-text="复制链接"
+            @confirm="onCopyUrl(url)"
+        >
+            {{ url }}
         </van-dialog>
 	</div>
 	
@@ -241,16 +265,6 @@
 	height: 100%;
 	box-sizing: border-box;
 	padding: 10px;
-	.url-box {
-		margin-top: 20px;
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		.url {
-			word-break: break-all;
-			flex: 1;
-		}
-	}
 	.btn_box {
 		display: flex;
 		align-items: center;
@@ -258,6 +272,31 @@
 	}
 	::v-deep .van-popup {
 		background: #fff !important;
+		.van-dialog__header {
+			padding: 16px 0 0 0;
+		}
+		.van-dialog__content {
+			word-break: break-all;
+			padding: 16px;
+		}
+		.van-field__control {
+			word-break: break-all;
+		}
+		.popup_content {
+			height: 100%;
+			position: relative;
+			.btn {
+				position: absolute;
+				bottom: calc(16px + env(safe-area-inset-bottom));
+				width: 100%;
+				padding: 0 16px;
+				box-sizing: border-box;
+			}
+		}
+		.van-field {
+			height: calc(100% - 44px - 10px - env(safe-area-inset-bottom));
+			overflow: auto;
+		}
 	}
 	.popup_content_wrap {
 		width: 100vw;

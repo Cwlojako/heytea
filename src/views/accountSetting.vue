@@ -106,6 +106,7 @@
                 v-model="token"
                 rows="1"
                 autosize
+                :spellcheck="false"
                 label="Token"
                 type="textarea"
                 placeholder="请输入"
