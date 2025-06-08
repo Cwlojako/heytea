@@ -74,7 +74,7 @@ const router = createRouter({
       component: () => import('@/views/orderDetail.vue')
     },
     {
-      path: '/accountSetting/',
+      path: '/accountSetting',
       name: 'AccountSetting',
       component: () => import('@/views/accountSetting.vue')
     },
@@ -82,7 +82,19 @@ const router = createRouter({
       path: '/404',
       name: '404',
       component: () => import('@/views/404.vue')
-    }
+    },
+    {
+      path: '/backstage',
+      name: 'Backstage',
+      component: () => import('@/views/backstage/index.vue'),
+      children: [
+        {
+          path: 'links',
+          name: 'Links',
+          component: () => import('@/views/backstage/links.vue')
+        }
+      ]
+    },
   ]
 })
 

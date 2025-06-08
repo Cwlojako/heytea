@@ -44,10 +44,10 @@
 			uuid: uuid.value,
 			price: price.value,
 			phone: phone.value,
-			couponId: coupon.value || ''
+			couponId: coupon.value || '',
+			url: url.value
 		}
 		uuid.value = ''
-		price.value = ''
 		coupon.value = ''
 		await axios.post(`${baseUrl}/generateLink`, params)
 		
@@ -169,7 +169,10 @@
 		</van-field>
 
 		<van-button type="primary" block style="margin-top: 10px;" :disabled="!isReady" @click="onGenerateUrl">生 成 链 接</van-button>
-
+		<div class="url-box" v-if="url">
+			<p class="url">{{ url }}</p>
+			<van-button size="small" type="success" @click="onCopyUrl(url)">复制链接</van-button>
+		</div>
 		<van-button type="warning" block style="margin-top: 10px;" @click="toAccountSetting">账 号 管 理</van-button>
 		<van-button type="danger" block style="margin-top: 10px;" @click="closeUrlVisible = true">关 闭 链 接</van-button>
 		<van-popup v-model:show="couponVisible" position="bottom">
@@ -255,6 +258,10 @@
         >
             {{ url }}
         </van-dialog>
+
+		<div class="entry_box" @click="router.push({ name: 'Backstage' })">
+			<van-icon name="cashier-o" size="20"/>
+		</div>
 	</div>
 	
 </template>
@@ -269,6 +276,16 @@
 		display: flex;
 		align-items: center;
 		gap: 10px;
+	}
+	.url-box {
+		margin-top: 20px;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		.url {
+			word-break: break-all;
+			flex: 1;
+		}
 	}
 	::v-deep .van-popup {
 		background: #fff !important;
@@ -393,6 +410,21 @@
 				flex: 1;
 			}
 		}
+	}
+	.entry_box {
+		position: fixed;
+		width: 50px;
+		height: 50px;
+		border-radius: 50%;
+		background-color: #fff;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		bottom: 10vh;
+		right: 5vw;
+		font-weight: bold;
+		box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.2);
+		cursor: pointer;
 	}
 }
 </style>

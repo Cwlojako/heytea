@@ -78,7 +78,7 @@
         await getOrderDetail()
         this.timeout = setTimeout(() => {
             getExpectTime()
-        }, 3000);
+        }, 5000);
     })
 
     onBeforeUnmount(() => {

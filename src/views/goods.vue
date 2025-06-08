@@ -397,9 +397,9 @@
 					<span class="count">{{ count }}</span>
 					<span class="plus" @click="onPlus">+</span>
 				</section>
-				<section class="btn_area">
+				<section class="btn_area" @click="onAddShopCar">
 					<span class="price"><b style="font-size: 12px;">￥</b>{{ totalPrice }}</span>
-					<span @click="onAddShopCar">加入购物袋</span>
+					<span>加入购物袋</span>
 				</section>
 			</div>
 		</van-popup>
