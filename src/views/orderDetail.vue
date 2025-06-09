@@ -9,6 +9,7 @@
     const orderInfo = ref({})
     const expectTimeObj = ref({})
     const phone = decrypt(decodeURIComponent(route.query.ph))
+    const timeout = ref(null)
     async function getOrderDetail() {
         const { u } = route.params
         const { data: res } = await axios.get(`${baseUrl}/orderDetail?signal=${u}&phone=${phone}`)
@@ -54,12 +55,15 @@
     })
 
     const expectText = computed(() => {
+        const { completedAt = null } = orderInfo.value
+        if (completedAt) {
+            return `已制作完成，请取茶！`
+        }
         if (!expectTimeObj.value || !Object.keys(expectTimeObj.value).length) {
             return '下单成功请稍等...'
         } else {
-            const { completedAt = null } = orderInfo.value
             const { totalCups, expectMakingTime } = expectTimeObj.value
-            return +expectMakingTime === 0 && !!completedAt ? `已制作完成，请取茶！` : `${totalCups}杯制作中，很快就好，预计等待${expectMakingTime}分钟`
+            return expectMakingTime === 0 ? `已制作完成，请取茶！` : `${totalCups}杯制作中，很快就好，预计等待${expectMakingTime}分钟`
         }
     })
 
@@ -70,19 +74,21 @@
 
     const isMaked = computed(() => {
         const { completedAt = null } = orderInfo.value
-        const { totalCups, expectMakingTime } = expectTimeObj.value
-        return +expectMakingTime === 0 && !!completedAt
+        const { expectMakingTime } = expectTimeObj.value
+        return !!completedAt || expectMakingTime === 0
     })
 
     onMounted(async () => {
         await getOrderDetail()
-        this.timeout = setTimeout(() => {
-            getExpectTime()
-        }, 5000);
+        if (!orderInfo.value.completedAt) {
+            timeout = setTimeout(() => {
+                getExpectTime()
+            }, 5000)
+        }
     })
 
     onBeforeUnmount(() => {
-        clearTimeout(this.timeout)
+        clearTimeout(timeout)
     })
 </script>
 

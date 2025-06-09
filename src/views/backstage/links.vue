@@ -15,29 +15,31 @@ const queryParams = reactive({
 })
 const tableData = ref([])
 const selectedRows = ref([])
+const tableRef = ref()
 
 function onCopyUrl(text) {
-		const textarea = document.createElement('textarea')
-		textarea.value = text
-		textarea.style.position = 'fixed'
-		textarea.style.opacity = '0'
-		document.body.appendChild(textarea)
-		textarea.select()
-		try {
-			document.execCommand('copy')
-			showToast('已复制')
-		} catch (err) {
-			showToast('复制失败')
-		}
-		document.body.removeChild(textarea)
+	const textarea = document.createElement('textarea')
+	textarea.value = text
+	textarea.style.position = 'fixed'
+	textarea.style.opacity = '0'
+	document.body.appendChild(textarea)
+	textarea.select()
+	try {
+		document.execCommand('copy')
+		showToast('已复制')
+	} catch (err) {
+		showToast('复制失败')
 	}
+	document.body.removeChild(textarea)
+}
 
 async function getList() {
+	tableRef.value.setScrollTop(0)
 	let params = {
 		...pageData,
 		...queryParams
 	}
-  let { data: res } = await axios.post(`${baseUrl}/getLinks`, params)
+	let { data: res } = await axios.post(`${baseUrl}/getLinks`, params)
 	const { list = [], total = 0 } = res.data
 	tableData.value = list.map(m => {
 		return {
@@ -52,9 +54,9 @@ function onSelectionChange(selected) {
 	selectedRows.value = selected
 }
 
-async function onCancelUrl(uuids) {
-	await axios.post(`${baseUrl}/closeLink`, { uuids })
-	showToast('链接已失效')
+async function onToggleUrlStatus(uuids, close = true) {
+	await axios.post(`${baseUrl}/closeOrOpenLink`, { uuids, close })
+	showToast(close ? '链接已失效' : '链接已恢复')
 	getList()
 }
 
@@ -64,8 +66,25 @@ function onBatchCancelUrl() {
 		return
 	}
 	const uuids = selectedRows.value.map(item => item.uuid)
-	onCancelUrl(uuids)
+	onToggleUrlStatus(uuids)
 }
+
+function onBatchOpenUrl() {
+	if (selectedRows.value.length === 0) {
+		showToast('请至少选择一条记录')
+		return
+	}
+	const uuids = selectedRows.value.map(item => item.uuid)
+	onToggleUrlStatus(uuids, false)
+}
+
+const banClose = computed(() => {
+	return selectedRows.value.length === 0 || selectedRows.value.some(item => [0, 2].includes(item.status))
+})
+
+const banOpen = computed(() => {
+	return selectedRows.value.length === 0 || selectedRows.value.some(item => [1, 2].includes(item.status))
+})
 
 onMounted(() => {
 	getList()
@@ -101,10 +120,12 @@ onMounted(() => {
 				</el-form>
 			</div>
 			<div class="btn_box">
-				<el-button type="warning" @click="onBatchCancelUrl" :disabled="!selectedRows.length">关闭链接</el-button>
+				<el-button type="warning" @click="onBatchCancelUrl" :disabled="banClose">关闭链接</el-button>
+				<el-button type="primary" @click="onBatchOpenUrl" :disabled="banOpen">恢复链接</el-button>
 			</div>
 			<el-table
 				:data="tableData"
+				ref="tableRef"
 				style="width: 100%"
 				stripe
 				border
@@ -114,38 +135,43 @@ onMounted(() => {
 					<el-table-column type="selection" width="55" />
 					<el-table-column prop="phone" label="账号" width="120" />
 					<el-table-column prop="uuid" label="uuid" width="150" />
-					<el-table-column prop="price" label="价格" width="120">
+					<el-table-column prop="price" label="价格" width="120" sortable>
 						<template #default="scope">
 							<span style="color: #1890ff;">￥{{ scope.row.price }}</span>
 						</template>
 					</el-table-column>
 					<el-table-column prop="couponId" label="优惠券id" width="150" />
-					<el-table-column prop="isClose" label="是否关闭" width="100">
+					<el-table-column prop="status" label="链接状态" width="100">
 						<template #default="scope">
-							<el-tag :type="scope.row.isClose ? 'danger' : 'primary'">
-								{{ scope.row.isClose ? '已关闭' : '生效中' }}
+							<el-tag :type="scope.row.status === 0 ? 'danger' : scope.row.status === 1 ? 'primary' : 'success'">
+								{{ scope.row.status === 0 ? '已关闭' : scope.row.status === 1 ? '生效中' : '已下单' }}
 							</el-tag>
 						</template>
 					</el-table-column>
-					<el-table-column prop="url" label="链接" width="200">
+					<el-table-column prop="url" label="链接" width="240" show-overflow-tooltip>
 							<template #default="scope">
-									<span style="word-break: break-all;">{{ scope.row.url }}</span>
 									<el-icon
 										v-if="scope.row.url"
 										size="20"
 										color="#1890ff"
 										@click="onCopyUrl(scope.row.url)"
-										style="cursor: pointer; margin-left: 10px; vertical-align: text-bottom;"
+										style="cursor: pointer; margin-right: 10px; vertical-align: text-bottom;"
 									>
 										<CopyDocument />
 									</el-icon>
+									<span style="word-break: break-all;">{{ scope.row.url }}</span>
+									
 							</template>
 					</el-table-column>
+					<el-table-column prop="orderAt" label="下单时间" width="160" />
 					<el-table-column prop="createdAt" label="创建时间" width="160" />
 					<el-table-column fixed="right" label="操作" min-width="120">
 						<template #default="scope">
-							<el-button link type="primary" size="small" @click="onCancelUrl([scope.row.uuid])" :disabled="scope.row.isClose">
+							<el-button link type="primary" size="small" @click="onToggleUrlStatus([scope.row.uuid])" :disabled="[0, 2].includes(scope.row.status)">
 								关闭链接
+							</el-button>
+							<el-button link type="primary" size="small" @click="onToggleUrlStatus([scope.row.uuid], false)" :disabled="[1, 2].includes(scope.row.status)">
+								恢复链接
 							</el-button>
 						</template>
 					</el-table-column>

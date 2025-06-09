@@ -118,6 +118,11 @@
 		closeUrlVisible.value = false
 	}
 
+	function toBackstage() {
+		const routeData = router.resolve({ name: 'Backstage' })
+		window.open(routeData.href, '_blank')
+	}
+
 	const isReady = computed(() => {
 		return price.value && uuid.value && phone.value && phone.value.length === 11
 	})
@@ -259,7 +264,7 @@
             {{ url }}
         </van-dialog>
 
-		<div class="entry_box" @click="router.push({ name: 'Backstage' })">
+		<div class="entry_box" @click="toBackstage">
 			<van-icon name="cashier-o" size="20"/>
 		</div>
 	</div>
