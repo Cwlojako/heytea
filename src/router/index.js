@@ -92,6 +92,16 @@ const router = createRouter({
           path: 'links',
           name: 'Links',
           component: () => import('@/views/backstage/links.vue')
+        },
+        {
+          path: 'accounts',
+          name: 'Accounts',
+          component: () => import('@/views/backstage/accounts.vue')
+        },
+        {
+          path: 'orders',
+          name: 'Orders',
+          component: () => import('@/views/backstage/orders.vue')
         }
       ]
     },

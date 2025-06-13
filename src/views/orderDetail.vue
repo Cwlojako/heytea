@@ -1,6 +1,6 @@
 <script setup>
-    import axios from 'axios'
-    import { showToast, showLoadingToast, closeToast } from 'vant'
+    import { orderDetail, getExpectTime } from '@/api/apis'
+    import { showToast } from 'vant'
 	import { useRoute } from 'vue-router'
     import { decrypt } from '@/utils/crypto'
 
@@ -12,24 +12,14 @@
     const timeout = ref(null)
     async function getOrderDetail() {
         const { u } = route.params
-        const { data: res } = await axios.get(`${baseUrl}/orderDetail?signal=${u}&phone=${phone}`)
-        if (res.code === 0 || res.code === 200) {
-            orderInfo.value = res.data.orderInfo
-        } else {
-            showToast({ message: res.message, type: 'fail' })
-        }
+        const { data: res } = await orderDetail(u, phone)
+        orderInfo.value = res.orderInfo
     }
 
     async function getExpectTime() {
         const { id, no } = orderInfo.value
-        showLoadingToast({ message: '刷新中...', duration: 0 })
-        const { data: res } = await axios.get(`${baseUrl}/getExpectTime?orderId=${id}&orderNo=${no}&phone=${phone}`)
-        if (res.code === 0 || res.code === 200) {
-            closeToast()
-            expectTimeObj.value = res.data[0]
-        } else {
-            showToast({ message: res.message, type: 'fail' })
-        }
+        const { data: res } = await getExpectTime(id, no, phone)
+        expectTimeObj.value = res[0]
     }
 
     function onCopy(text) {

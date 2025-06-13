@@ -1,18 +1,24 @@
 <script setup>
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
+
 const router = useRouter()
+const route = useRoute()
+const defaultActive = ref('')
 
 const menus = [
-	{ title: '链接管理', index: 'Links' }
+	{ title: '链接管理', index: 'Links' },
+	{ title: '账号管理', index: 'Accounts' },
+	{ title: '订单管理', index: 'Orders' }
 ]
 
 function go(name) {
+	defaultActive.value = name
 	router.push({ name })
 }
 
 onMounted(() => {
-	const name = menus[0].index
-	router.replace({ name })
+	const { name } = route
+	defaultActive.value = name
 })
 </script>
 
@@ -20,11 +26,11 @@ onMounted(() => {
   <div class="common_wrapper">
     <el-container>
       <el-header>
-        <h2>喜茶兑换后台管理</h2>
+        <h2>xxx</h2>
       </el-header>
       <el-container class="bottom_container">
         <el-aside width="200px">
-          <el-menu default-active="Links" @select="go" router>
+          <el-menu @select="go" router :default-active="defaultActive">
             <el-menu-item 
 							v-for="(item, idx) in menus"
 							:index="item.index"
@@ -32,11 +38,14 @@ onMounted(() => {
 						>
 							{{ item.title }}
 						</el-menu-item>
-          </el-menu>
+					</el-menu>
         </el-aside>
         <el-main>
-					<el-card>
+					<el-card v-if="route.name !== 'Backstage'">
 						<router-view />
+					</el-card>
+					<el-card v-else class="welcome_box">
+						欢迎
 					</el-card>
         </el-main>
       </el-container>

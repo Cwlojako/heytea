@@ -2,7 +2,7 @@
 	import { encrypt } from '@/utils/crypto'
 	import { showToast } from 'vant'
 	import { useRoute, useRouter } from 'vue-router'
-	import axios from 'axios'
+	import { generateLink, findCoupon, closeOrOpenLink } from '@/api/apis'
 
 	const router = useRouter()
 	const baseUrl = import.meta.env.VITE_BASE_URL
@@ -49,8 +49,7 @@
 		}
 		uuid.value = ''
 		coupon.value = ''
-		await axios.post(`${baseUrl}/generateLink`, params)
-		
+		await generateLink(params)
 	}
 
 	function onCopyUrl(text) {
@@ -70,18 +69,17 @@
 	}
 
 	async function onGetList() {
-		let { data: res } = await axios.post(`${baseUrl}/findCoupon?phone=${phone.value}&price=${price.value}`)
-		if (res.code === 200) {
-			list.value = res.data.map(m => {
-				return {
-					...m,
-					checked: m.id == coupon.value
-				}
-			})
-			
-		} else {
-			showToast({ message: res.message, type: 'fail' })
+		let params = {
+			phone: phone.value,
+			price: price.value
 		}
+		let { data: res } = await findCoupon(params)
+		list.value = res.map(m => {
+			return {
+				...m,
+				checked: m.id == coupon.value
+			}
+		})
 	}
 
 	function onCancel() {
@@ -112,7 +110,7 @@
 			const uuid = queryParams.get('u')
 			return uuid
 		})
-		await axios.post(`${baseUrl}/closeLink`, { uuids })
+		await closeOrOpenLink({ uuids })
 		showToast('链接已关闭')
 		closeUrl.value = ''
 		closeUrlVisible.value = false

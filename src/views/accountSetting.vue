@@ -1,5 +1,5 @@
 <script setup>
-	import axios from 'axios'
+	import { getAccounts, setOrUpdateToken } from '@/api/apis'
 	import { showToast } from 'vant'
 	import { useRoute, useRouter } from 'vue-router'
 
@@ -19,22 +19,12 @@
     }
 
     async function onConfirm() {
-        const fetchApi = `${baseUrl}/setOrUpdateToken?token=${token.value}&phone=${phone.value}`
         if (isEdit.value) {
-            const { data: res } = await axios.get(fetchApi)
-            if (res.code !== 0 && res.code !== 200) {
-                showToast({ message: res.message, type: 'fail' })
-                return
-            }
+            const res = await setOrUpdateToken(token.value, phone.value)
             showToast('修改成功')
             getList()
         } else {
-            const { data: res } = await axios.get(fetchApi)
-            console.log(res)
-            if (res.code !== 0 && res.code !== 200) {
-                showToast({ message: res.message, type: 'fail' })
-                return
-            }
+            const res = await setOrUpdateToken(token.value, phone.value)
             showToast('新增成功')
             list.value.push({
                 phone: phone.value,
@@ -54,8 +44,8 @@
     }
 
     async function getList() {
-        const { data: res } = await axios.get(`${baseUrl}/getAllTokens`)
-        list.value = res.data.map(m => {
+        const { data: res } = await getAccounts()
+        list.value = res.map(m => {
             return {
                 phone: m.phone,
                 token: m.value

@@ -1,5 +1,5 @@
 <script setup>
-import axios from 'axios'
+import { findStore } from '@/api/apis'
 import { showToast } from 'vant'
 import { useStoreState } from '@/stores'
 import { useRouter, useRoute } from 'vue-router'
@@ -29,16 +29,15 @@ async function onSearch(isNext = false) {
 	}
 	!isNext && (showMaskLoading.value = true)
 	let params = isNext ? { name: keyword.value, loadShopIds, phone } : { name: keyword.value, phone }
-	let { data: res } = await axios.post(`${baseUrl}/findStore`, params)
-	if (res.code === 0) {
-		const { list: _list, isLast } = res.data
+	try {
+		let { data: res } = await findStore(params)
+		const { list: _list, isLast } = res
 		let result = isNext ? list.value.concat(_list) : _list
 		list.value = result
 		finished.value = isLast
 		loading.value = false
 		!isNext && (showMaskLoading.value = false)
-	} else {
-		showToast({ message: res.message, type: 'fail' })
+	} catch(err) {
 		loading.value = false
 		finished.value = true
 		!isNext && (showMaskLoading.value = false)

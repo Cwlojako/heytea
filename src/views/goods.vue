@@ -1,6 +1,6 @@
 <script setup>
 	import { useRoute, useRouter } from 'vue-router'
-	import axios from 'axios'
+	import { findGoods, goodsDetail, settle } from '@/api/apis'
 	import { showToast } from 'vant'
 	import { useClickAway } from '@vant/use'
 	import debounce from 'lodash/debounce'
@@ -31,8 +31,8 @@
 
 	async function getGoods(keyword = '') {
 		showSkeleton.value = true
-		const { data: res } = await axios.post(`${baseUrl}/findGoods`, { shopId: route.params.id, name: keyword })
-		list.value = res.data.filter(f => !f.combo_meal)
+		const { data: res } = await findGoods({ shopId: route.params.id, name: keyword })
+		list.value = res.filter(f => !f.combo_meal)
 		showSkeleton.value = false
 		nextTick(() => {
 			list.value.forEach((e, idx) => {
@@ -49,9 +49,9 @@
 			return
 		}
 		popupVisible.value = true
-		const { data: res } = await axios.post(`${baseUrl}/goodsDetail`, { shopId: route.params.id, productId: item.id, url: static_product_url })
-		productDetail.value = res.data
-		specs.value = res.data.skus[0]?.material_groups ?? []
+		const { data: res } = await goodsDetail({ shopId: route.params.id, productId: item.id, url: static_product_url })
+		productDetail.value = res
+		specs.value = res.skus[0]?.material_groups ?? []
 		if (specs.value.length) {
 			specs.value.forEach(e => {
 				e.materials.forEach(f => {
@@ -200,7 +200,7 @@
 				user_infos: []
 			}
 		})
-		const { data: res } = await axios.post(`${baseUrl}/settle`, 
+		const { data: res } = await settle( 
 			{ 
 				shopId: route.params.id,
 				price: allPrice.value,
@@ -209,7 +209,8 @@
 				couponId,
 				phone,
 				remark: remark.value
-			})
+			}
+		)
 		showToast(res.message)
 		btnLoading.value = false
 		if (res.code === 200) {

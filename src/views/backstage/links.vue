@@ -1,5 +1,5 @@
 <script setup>
-import axios from 'axios'
+import { closeOrOpenLink, getLinks } from '@/api/apis'
 import { showToast } from 'vant'
 import { CopyDocument } from '@element-plus/icons-vue'
 
@@ -39,8 +39,8 @@ async function getList() {
 		...pageData,
 		...queryParams
 	}
-	let { data: res } = await axios.post(`${baseUrl}/getLinks`, params)
-	const { list = [], total = 0 } = res.data
+	let { data: res } = await getLinks(params)
+	const { list = [], total = 0 } = res
 	tableData.value = list.map(m => {
 		return {
 			...m,
@@ -55,7 +55,7 @@ function onSelectionChange(selected) {
 }
 
 async function onToggleUrlStatus(uuids, close = true) {
-	await axios.post(`${baseUrl}/closeOrOpenLink`, { uuids, close })
+	await closeOrOpenLink({ uuids, close })
 	showToast(close ? '链接已失效' : '链接已恢复')
 	getList()
 }
