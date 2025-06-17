@@ -85,7 +85,6 @@ function onBatchOpenUrl() {
 }
 
 function onReset(form) {
-	console.log(form)
 	form.resetFields()
 	getList()
 }

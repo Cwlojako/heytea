@@ -18,7 +18,8 @@ const pageData = reactive({
 	total: 0
 })
 const queryParams = reactive({
-	phone: ''
+	phone: '',
+	date: []
 })
 let orderInfo = reactive({
 	shop: {},
@@ -28,6 +29,7 @@ const drawerVisible = ref(false)
 const tableData = ref([])
 const selectedRows = ref([])
 const tableRef = ref()
+const formRef = ref()
 
 function onCopyUrl(text) {
 	const textarea = document.createElement('textarea')
@@ -103,6 +105,11 @@ const getSummaries = (param: SummaryMethodProps) => {
   return sums
 }
 
+function onReset(form) {
+	form.resetFields()
+	getList()
+}
+
 const specsText = computed(() => {
 	return (item) => {
 		return item.materials.data.map((m) => m.name).join('，')
@@ -118,8 +125,8 @@ onMounted(() => {
 <template>
     <div class="content_wrapper">
 			<div class="search_box">
-				<el-form inline :model="queryParams" @submit.native.prevent>
-					<el-form-item label="手机账号">
+				<el-form inline :model="queryParams" @submit.native.prevent ref="formRef">
+					<el-form-item label="手机账号" prop="phone">
 						<el-input
 							v-model="queryParams.phone"
 							placeholder="手机账号，支持模糊查询"
@@ -128,7 +135,18 @@ onMounted(() => {
 							@change="getList"
 						/>
 					</el-form-item>
+					<el-form-item label="下单时间" prop="date">
+						<el-date-picker
+							v-model="queryParams.date"
+							type="datetimerange"
+							start-placeholder="开始日期"
+							end-placeholder="结束日期"
+							format="YYYY-MM-DD HH:mm:ss"
+							value-format="YYYY-MM-DD HH:mm:ss"
+						/>
+					</el-form-item>
 					<el-form-item>
+						<el-button @click="onReset(formRef)">重 置</el-button>
 						<el-button type="primary" @click="getList">搜 索</el-button>
 					</el-form-item>
 				</el-form>
