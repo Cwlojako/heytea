@@ -61,7 +61,11 @@ function onEdit(row) {
 		cancelButtonText: '取消'
 	})
 	.then(async ({ value }) => {
-		await setOrUpdateToken(value, row.phone)
+		const params = {
+			token: value,
+			phone: row.phone
+		}
+		await setOrUpdateToken(params)
 		ElMessage({ type: 'success', message: `更新成功` })
 		getList()
 	})
@@ -75,7 +79,11 @@ function onAdd() {
 function onAddAccount(formEl) {
 	formEl.validate(async (valid, fields) => {
 		if (!valid) return
-		await setOrUpdateToken(form.token, form.phone)
+		const params = {
+			token: form.token,
+			phone: form.phone
+		}
+		await setOrUpdateToken(params)
 		dialogVisible.value = false
 		getList()
 	})

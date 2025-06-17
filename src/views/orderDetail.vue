@@ -16,7 +16,7 @@
         orderInfo.value = res.orderInfo
     }
 
-    async function getExpectTime() {
+    async function getTime() {
         const { id, no } = orderInfo.value
         const { data: res } = await getExpectTime(id, no, phone)
         expectTimeObj.value = res[0]
@@ -72,7 +72,7 @@
         await getOrderDetail()
         if (!orderInfo.value.completedAt) {
             timeout = setTimeout(() => {
-                getExpectTime()
+                getTime()
             }, 5000)
         }
     })
@@ -102,7 +102,7 @@
                     color="#1989fa"
                     size="18"
                     style="margin-left: 5px;"
-                    @click="getExpectTime"
+                    @click="getTime"
                 />
             </div>
         </section>

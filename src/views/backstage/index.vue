@@ -1,15 +1,23 @@
 <script setup>
 import { useRouter, useRoute } from 'vue-router'
 
+const baseUrl = import.meta.env.VITE_BASE_URL
 const router = useRouter()
 const route = useRoute()
 const defaultActive = ref('')
 
-const menus = [
-	{ title: '链接管理', index: 'Links' },
-	{ title: '账号管理', index: 'Accounts' },
-	{ title: '订单管理', index: 'Orders' }
-]
+let menus = []
+if (baseUrl === 'http://47.106.130.54:1129') {
+	menus = [
+		{ title: '链接管理', index: 'Links' }
+	]
+} else {
+	menus = [
+		{ title: '链接管理', index: 'Links' },
+		{ title: '账号管理', index: 'Accounts' },
+		{ title: '订单管理', index: 'Orders' }
+	]
+}
 
 function go(name) {
 	defaultActive.value = name
@@ -26,19 +34,19 @@ onMounted(() => {
   <div class="common_wrapper">
     <el-container>
       <el-header>
-        <h2>xxx</h2>
+        <h2>喜茶兑换后台管理</h2>
       </el-header>
       <el-container class="bottom_container">
         <el-aside width="200px">
           <el-menu @select="go" router :default-active="defaultActive">
             <el-menu-item 
-							v-for="(item, idx) in menus"
-							:index="item.index"
-							:key="idx"
-						>
-							{{ item.title }}
-						</el-menu-item>
-					</el-menu>
+					v-for="(item, idx) in menus"
+					:index="item.index"
+					:key="idx"
+				>
+					{{ item.title }}
+				</el-menu-item>
+			</el-menu>
         </el-aside>
         <el-main>
 					<el-card v-if="route.name !== 'Backstage'">

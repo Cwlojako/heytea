@@ -48,14 +48,15 @@ function loadMore() {
 	!finished.value && onSearch(true)
 }
 
-function toGoods(id) {
+function toGoods(item) {
 	storeState.setSavedState({
 		keyword: keyword.value,
 		list: list.value,
 		finished: finished.value
 	})
 	const { u, p, c, ph } = route.query
-	router.push({ name: 'Goods', params: { id }, query: { u, p, c, ph } })
+	const { id, name } = item
+	router.push({ name: 'Goods', params: { id }, query: { u, p, c, ph, name } })
 }
 
 function onClear() {
@@ -80,11 +81,19 @@ onDeactivated(() => {
 
 <template>
 	<div class="store_wrapper">
+		<div class="step_box">
+			<p class="title">温馨提示：下单步骤</p>
+			<van-steps :active="3" active-color="#000000">
+				<van-step>搜索门店</van-step>
+				<van-step>挑选商品</van-step>
+				<van-step>结算下单</van-step>
+				<van-step>查取茶号</van-step>
+			</van-steps>
+		</div>
 		<van-search
 			ref="search"
 			v-model="keyword"
-			placeholder="请输入门店或地址关键字"
-			shape="round"
+			placeholder="请输入门店关键字，门店名称必须跟小程序一致"
 			background="#fff"
 			@search="(val) => onSearch(false)"
 			@update:model-value="debouncedSearch"
@@ -105,7 +114,7 @@ onDeactivated(() => {
 					v-for="item in list"
 					:key="item"
 					:class="['list-item', { disabled: !item.is_actived }]"
-					@click="toGoods(item.id)"
+					@click="toGoods(item)"
 				>
 					<span class="top_name">
 						{{ item.name }}
@@ -114,37 +123,48 @@ onDeactivated(() => {
 					<span class="bottom_address">{{ item.address }}</span>
 				</div>
 			</van-list>
-			<div class="step_box" v-else>
-				<van-image
-					width="180"
-					height="180"
-					src="https://static.heytea.com/taro_trial/v1/img/my/me_img_head_login.png"
-					round
-				/>
-				<p class="title">温馨提示：下单步骤</p>
-				<van-steps :active="3" active-color="#000000">
-					<van-step>搜索门店</van-step>
-					<van-step>挑选商品</van-step>
-					<van-step>结算下单</van-step>
-					<van-step>查取茶号</van-step>
-				</van-steps>
-			</div>
+			<van-image
+				v-else
+				width="150"
+				height="150"
+				src="https://static.heytea.com/taro_trial/v1/img/my/me_img_head_login.png"
+				round
+			/>
 		</section>
 	</div>
 </template>
 
 <style scoped lang="scss">
 .store_wrapper {
-	padding: 16px;
+	padding: calc(20px + env(safe-area-inset-top)) 16px 20px 16px;
 	height: 100vh;
 	box-sizing: border-box;
 	overflow-y: hidden;
+	.step_box {
+		width: 100%;
+		box-sizing: border-box;
+		overflow: hidden;
+		.van-steps {
+			width: 100%;
+			box-sizing: border-box;
+			font-size: 14px;
+			::v-deep .van-step__title{
+				font-size: 14px;
+			}
+		}
+		.title {
+			margin-bottom: 20px;
+			text-align: center;
+			font-size: 16px;
+			font-weight: bolder;
+		}
+	}
 	.van-search {
 		padding: 0;
-		margin-bottom: 10px;
+		border: 1px solid #f1f1f1;
 	}
 	.list_box {
-		height: calc(100% - 44px);
+		height: calc(100% - 36px - 102px);
 		overflow-y: auto;
 		position: relative;
 		.loading_box {
@@ -157,29 +177,9 @@ onDeactivated(() => {
 			background-color: rgba(0,0,0,.5);
 			z-index: 99;
 		}
-		.step_box {
-			width: 100%;
-			height: 100%;
-			box-sizing: border-box;
-			overflow: hidden;
-			.van-steps {
-				width: 100%;
-				box-sizing: border-box;
-				font-size: 14px;
-				::v-deep .van-step__title{
-					font-size: 14px;
-				}
-			}
-			.van-image {
-				margin: 20px auto 0;
-				display: block;
-			}
-			.title {
-				margin: 20px 0;
-				text-align: center;
-				font-size: 16px;
-				font-weight: bolder;
-			}
+		.van-image {
+			margin: 50px auto 0;
+			display: block;
 		}
 	}
 	.list-item {

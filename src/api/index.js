@@ -39,7 +39,7 @@ instance.interceptors.response.use(response => {
         loadingToast.close()
     }
     showToast({
-        message: error.message || '服务器错误',
+        message: error?.response?.data?.message ?? '服务器错误',
         type: 'fail',
         duration: 2000
     })

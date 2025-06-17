@@ -28,8 +28,8 @@ export function getAccounts() {
     return axios.get('/getAllTokens')
 }
 
-export function setOrUpdateToken(token = '', phone = '') {
-    return axios.get(`/setOrUpdateToken?token=${token}&phone=${phone}`)
+export function setOrUpdateToken(params) {
+    return axios.post('/setOrUpdateToken', params)
 }
 
 export function generateLink(params) {
@@ -58,4 +58,16 @@ export function deleteTokens(params) {
 
 export function getOrders(params) {
     return axios.post('/getOrders', params)
+}
+
+export function addGroup(params) {
+    return axios.post('/addGroup', params)
+}
+
+export function editGroup(params) {
+    return axios.post('/editGroup', params)
+}
+
+export function getGroups() {
+    return axios.get('/getGroups')
 }

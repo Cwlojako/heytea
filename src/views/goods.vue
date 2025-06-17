@@ -176,8 +176,8 @@
 
 	async function onRemarkConfirm() {
 		btnLoading.value = true
-		if (+allPrice.value > +limitPrice) {
-			showToast({ message: `超出限制金额`, type: 'fail' })
+		if (+allPrice.value !== +limitPrice) {
+			showToast({ message: `不满足限制金额`, type: 'fail' })
 			btnLoading.value = false
 			return
 		}
@@ -213,7 +213,7 @@
 		)
 		showToast(res.message)
 		btnLoading.value = false
-		if (res.code === 200) {
+		if (res.code === 0) {
 			shopCarListVisible.value && (shopCarListVisible.value = false)
 			shopCarList.value = []
 			router.push({ name: 'OrderDetail', params: { u: uuid }, query: { ph: route.query.ph } })
@@ -261,12 +261,12 @@
 
 <template>
 	<div class="goods_wrapper">
+		<section class="shop_name">{{ route.query.name }}</section>
 		<section class="search_area">
 			<van-icon name="arrow-left" color="#969799" size="22" @click="router.go(-1)"/>
 			<van-search
 				v-model="keyword"
 				placeholder="请输入商品关键字"
-				shape="round"
 				background="#fff"
 				@search="(val) => getGoods(val)"
 				@update:model-value="debouncedSearch"
@@ -424,6 +424,17 @@
 
 <style scoped lang="scss">
 .goods_wrapper {
+	.shop_name {
+		@include ellipsis;
+		height: 50px;
+		line-height: 50px;
+		font-size: 20px;
+		font-weight: bold;
+		text-align: center;
+		color: #333;
+		width: 70%;
+		margin: 0 auto;
+	}
 	::v-deep .van-dialog__header {
 		background: #fff !important;
 		padding: 16px 0;
@@ -434,10 +445,11 @@
 	.search_area {
 		@include flexYCenter;
 		gap: 10px;
-		padding: 16px;
+		padding: 0 16px 16px;
 		.van-search {
 			padding: 0;
 			flex: 1;
+			border: 1px solid #f1f1f1;
 		}
 	}
 	.van-skeleton {
@@ -470,7 +482,7 @@
 		}
 	}
 	.list_box {
-		height: calc(100% - 66px);
+		height: calc(100% - 102px);
 		overflow-y: auto;
 		display: grid;
 		grid-template-columns: repeat(2, 1fr);
@@ -479,7 +491,7 @@
 		padding: 0 16px 16px;
 		box-sizing: border-box;
 		&.showShopCar {
-			height: calc(100% - 50px - 66px - env(safe-area-inset-bottom));
+			height: calc(100% - 50px - 102px - env(safe-area-inset-bottom));
 		}
 		.list_item {
 			padding: 10px;

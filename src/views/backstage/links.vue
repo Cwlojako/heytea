@@ -11,11 +11,22 @@ const pageData = reactive({
 })
 const queryParams = reactive({
 	phone: '',
-	uuid: ''
+	uuid: '',
+	status: '',
+	date: [],
+	price: ''
 })
 const tableData = ref([])
 const selectedRows = ref([])
 const tableRef = ref()
+const status = ref([
+	{ label: '已关闭', value: 0 },
+	{ label: '生效中', value: 1 },
+	{ label: '已下单', value: 2 },
+])
+const searchBox = ref()
+const searchBoxHeight = ref(0)
+const formRef = ref()
 
 function onCopyUrl(text) {
 	const textarea = document.createElement('textarea')
@@ -41,12 +52,7 @@ async function getList() {
 	}
 	let { data: res } = await getLinks(params)
 	const { list = [], total = 0 } = res
-	tableData.value = list.map(m => {
-		return {
-			...m,
-			createdAt: new Date(m.createdAt).toLocaleString()
-		}
-	})
+	tableData.value = list
 	pageData.total = total
 }
 
@@ -78,6 +84,12 @@ function onBatchOpenUrl() {
 	onToggleUrlStatus(uuids, false)
 }
 
+function onReset(form) {
+	console.log(form)
+	form.resetFields()
+	getList()
+}
+
 const banClose = computed(() => {
 	return selectedRows.value.length === 0 || selectedRows.value.some(item => [0, 2].includes(item.status))
 })
@@ -86,17 +98,19 @@ const banOpen = computed(() => {
 	return selectedRows.value.length === 0 || selectedRows.value.some(item => [1, 2].includes(item.status))
 })
 
-onMounted(() => {
+onMounted(async () => {
 	getList()
+	await nextTick()
+	searchBoxHeight.value = searchBox.value.clientHeight
 })
 
 </script>
 
 <template>
     <div class="content_wrapper">
-			<div class="search_box">
-				<el-form inline :model="queryParams" @submit.native.prevent>
-					<el-form-item label="手机账号">
+			<div class="search_box" ref="searchBox">
+				<el-form inline :model="queryParams" @submit.native.prevent ref="formRef">
+					<el-form-item label="手机账号" prop="phone">
 						<el-input
 							v-model="queryParams.phone"
 							placeholder="手机账号，支持模糊查询"
@@ -105,7 +119,7 @@ onMounted(() => {
 							@change="getList"
 						/>
 					</el-form-item>
-					<el-form-item label="uuid">
+					<el-form-item label="uuid" prop="uuid">
 						<el-input
 							v-model="queryParams.uuid"
 							placeholder="uuid"
@@ -114,7 +128,37 @@ onMounted(() => {
 							@change="getList"
 						/>
 					</el-form-item>
+					<el-form-item label="价格" prop="price">
+						<el-input
+							v-model="queryParams.price"
+							placeholder="价格"
+							clearable
+							style="width: 200px;"
+							@change="getList"
+						/>
+					</el-form-item>
+					<el-form-item label="链接状态" prop="status">
+						<el-select v-model="queryParams.status" placeholder="链接状态" style="width: 200px;">
+							<el-option
+								v-for="item in status"
+								:key="item.value"
+								:label="item.label"
+								:value="item.value"
+							/>
+						</el-select>
+					</el-form-item>
+					<el-form-item label="创建时间" prop="date">
+						<el-date-picker
+							v-model="queryParams.date"
+							type="datetimerange"
+							start-placeholder="开始日期"
+							end-placeholder="结束日期"
+							format="YYYY-MM-DD HH:mm:ss"
+							value-format="YYYY-MM-DD HH:mm:ss"
+						/>
+					</el-form-item>
 					<el-form-item>
+						<el-button @click="onReset(formRef)">重 置</el-button>
 						<el-button type="primary" @click="getList">搜 索</el-button>
 					</el-form-item>
 				</el-form>
@@ -129,7 +173,7 @@ onMounted(() => {
 				style="width: 100%"
 				stripe
 				border
-				height="calc(100% - 52px - 50px - 50px)"
+				:height="`calc(100% - 52px - ${searchBoxHeight}px - 50px)`"
 				@selection-change="onSelectionChange"
 			>
 					<el-table-column type="selection" width="55" />
@@ -195,10 +239,12 @@ onMounted(() => {
 	.content_wrapper {
 		height: 100%;
 		.search_box {
-			height: 50px;
+			height: fit-content;
 			.el-form {
 				height: 100%;
 				display: flex;
+				flex-wrap: wrap;
+				gap: 10px;
 				.el-form-item {
 					margin: 0 10px 0 0;
 					display: inline-flex;
