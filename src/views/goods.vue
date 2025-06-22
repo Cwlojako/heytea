@@ -176,7 +176,7 @@
 
 	async function onRemarkConfirm() {
 		btnLoading.value = true
-		if (+allPrice.value !== +limitPrice) {
+		if (+allPrice.value > +limitPrice) {
 			showToast({ message: `不满足限制金额`, type: 'fail' })
 			btnLoading.value = false
 			return

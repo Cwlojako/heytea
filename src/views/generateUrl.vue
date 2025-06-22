@@ -2,15 +2,18 @@
 	import { encrypt } from '@/utils/crypto'
 	import { showToast } from 'vant'
 	import { useRoute, useRouter } from 'vue-router'
-	import { generateLink, findCoupon, closeOrOpenLink } from '@/api/apis'
+	import { generateLink, findCoupon, closeOrOpenLink, generateLinksBatch } from '@/api/apis'
 
 	const router = useRouter()
 	const baseUrl = import.meta.env.VITE_BASE_URL
+	const isBatch = ref(0)
+	const batchCount = ref(5)
 	const price = ref('')
 	const uuid = ref('')
 	const phone = ref('')
 	const url = ref('')
 	const coupon = ref('')
+	const coupons = ref([])
 	const couponVisible = ref(false)
 	const list = ref([])
 	const closeUrlVisible = ref(false)
@@ -29,27 +32,57 @@
 		uuid.value = Array.from({ length: 16 }, () =>
 			Math.floor(Math.random() * 16).toString(16)
 		).join('')
+		return uuid.value
 	}
 
 	async function onGenerateUrl() {
 		const p = encodeURIComponent(encrypt(price.value))
 		const ph = encodeURIComponent(encrypt(phone.value))
-		let res = `${window.location.origin}/store?u=${uuid.value}&p=${p}&ph=${ph}`
-		if (coupon.value) {
-			res += `&c=${coupon.value}`
+		
+		if (isBatch.value) {
+			let uuids = []
+			let couponIds = []
+			let urls = []
+			for (let i = 0; i < batchCount.value; i++) {
+				let uuid = onGetUuid()
+				uuids.push(uuid)
+				if (coupons.value.length) {
+					couponIds.push(coupons[i])
+					urls.push(`${window.location.origin}/store?u=${uuid}&p=${p}&ph=${ph}&c=${coupons[i]}`)
+				} else {
+					urls.push(`${window.location.origin}/store?u=${uuid}&p=${p}&ph=${ph}`)
+				}
+			}
+			
+			url.value = urls.join('\r\n')
+			urlDialog.value = true
+			let params = {
+				uuids,
+				price: price.value,
+				phone: phone.value,
+				urls,
+				couponIds
+			}
+			coupons.value = []
+			await generateLinksBatch(params)
+		} else {
+			let res = `${window.location.origin}/store?u=${uuid.value}&p=${p}&ph=${ph}`
+			if (coupon.value) {
+				res += `&c=${coupon.value}`
+			}
+			url.value = res
+			urlDialog.value = true
+			let params = {
+				uuid: uuid.value,
+				price: price.value,
+				phone: phone.value,
+				couponId: coupon.value || '',
+				url: url.value
+			}
+			uuid.value = ''
+			coupon.value = ''
+			await generateLink(params)
 		}
-		url.value = res
-		urlDialog.value = true
-		let params = {
-			uuid: uuid.value,
-			price: price.value,
-			phone: phone.value,
-			couponId: coupon.value || '',
-			url: url.value
-		}
-		uuid.value = ''
-		coupon.value = ''
-		await generateLink(params)
 	}
 
 	function onCopyUrl(text) {
@@ -93,10 +126,20 @@
 	}
 
 	function onChecked(item) {
-		if (item.checked) {
-			list.value.filter(i => i.id !== item.id).forEach(i => i.checked = false)
-			coupon.value = item.id
+		if (isBatch.value) {
+			if (item.checked) {
+				coupons.value.push(item.id)
+			} else {
+				let idx = coupons.value.findIndex(f => f === item.id)
+				coupons.value.splice(idx, 1)
+			}
+		} else {
+			if (item.checked) {
+				list.value.filter(i => i.id !== item.id).forEach(i => i.checked = false)
+				coupon.value = item.id
+			}
 		}
+		
 	}
 
 	function toAccountSetting() {
@@ -122,7 +165,7 @@
 	}
 
 	const isReady = computed(() => {
-		return price.value && uuid.value && phone.value && phone.value.length === 11
+		return price.value && (uuid.value || isBatch.value) && phone.value && phone.value.length === 11
 	})
 
 	const couponReady = computed(() => {
@@ -145,11 +188,28 @@
 			return list.filter(item => idx === 0 ? !item.disabled : item.disabled)
 		}
 	})
+
+	const couponBtnDisabled = computed(() => {
+		return isBatch.value && coupons.value.length !== batchCount.value
+	})
 </script>
 
 <template>
 	<div class="wrapper">
-		<van-field label='UUID' v-model="uuid" readonly>
+		<van-field name="radio" label="是否批量生成">
+			<template #input>
+				<van-radio-group v-model="isBatch" direction="horizontal">
+				<van-radio :name="0">否</van-radio>
+				<van-radio :name="1">是</van-radio>
+				</van-radio-group>
+			</template>
+		</van-field>
+		<van-field name="stepper" label="条数" v-if="!!isBatch">
+			<template #input>
+				<van-stepper v-model="batchCount" input-width="40px" button-size="32px"/>
+			</template>
+		</van-field>
+		<van-field label='UUID' v-model="uuid" readonly v-if="!!!isBatch">
 			<template #button>
 				<van-button size="small" type="primary" @click="onGetUuid">获取UUID</van-button>
 			</template>
@@ -224,8 +284,11 @@
 					</van-tab>
 				</van-tabs>
 				<div class="bottom_btn">
+					<div class="selected_text">
+						{{ coupons.length }} / {{ batchCount }}
+					</div>
 					<van-button @click="onCancel">取 消</van-button>
-					<van-button color="#131313" @click="onConfirm">确 认</van-button>
+					<van-button color="#131313" @click="onConfirm" :disabled="couponBtnDisabled">确 认</van-button>
 				</div>
 			</div>
 		</van-popup>
@@ -411,6 +474,10 @@
 			gap: 10px;
 			.van-button {
 				flex: 1;
+			}
+			.selected_text {
+				@include flexCenter;
+				font-weight: bold;
 			}
 		}
 	}
