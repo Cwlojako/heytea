@@ -1,5 +1,5 @@
 <script setup>
-import { closeOrOpenLink, getLinks } from '@/api/apis'
+import { closeOrOpenLink, getLinks, batchDelLink } from '@/api/apis'
 import { showToast } from 'vant'
 import { CopyDocument } from '@element-plus/icons-vue'
 
@@ -84,6 +84,13 @@ function onBatchOpenUrl() {
 	onToggleUrlStatus(uuids, false)
 }
 
+async function onBatchDelUrl() {
+	const ids = selectedRows.value.map(item => item._id)
+	await batchDelLink({ ids })
+	showToast('删除成功')
+	getList()
+}
+
 function onReset(form) {
 	form.resetFields()
 	getList()
@@ -165,6 +172,7 @@ onMounted(async () => {
 			<div class="btn_box">
 				<el-button type="warning" @click="onBatchCancelUrl" :disabled="banClose">关闭链接</el-button>
 				<el-button type="primary" @click="onBatchOpenUrl" :disabled="banOpen">恢复链接</el-button>
+				<el-button type="danger" @click="onBatchDelUrl" :disabled="!selectedRows.length">删除链接</el-button>
 			</div>
 			<el-table
 				:data="tableData"

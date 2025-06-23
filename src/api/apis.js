@@ -36,8 +36,16 @@ export function generateLink(params) {
     return axios.post('/generateLink', params)
 }
 
+export function generateLinksBatch(params) {
+    return axios.post('/generateLinksBatch', params)
+}
+
 export function closeOrOpenLink(params) {
     return axios.post('/closeOrOpenLink', params)
+}
+
+export function batchDelLink(params) {
+    return axios.post('/batchDelLink', params)
 }
 
 export function findCoupon(params) {
