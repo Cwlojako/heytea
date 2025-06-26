@@ -34,7 +34,7 @@ onMounted(() => {
   <div class="common_wrapper">
     <el-container>
       <el-header>
-        <h2>喜茶兑换后台管理</h2>
+        <h2>Heytea.</h2>
       </el-header>
       <el-container class="bottom_container">
         <el-aside width="200px">

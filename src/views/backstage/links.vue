@@ -1,7 +1,7 @@
 <script setup>
-import { closeOrOpenLink, getLinks, batchDelLink, findCoupon, batchBindCoupon } from '@/api/apis'
+import { closeOrOpenLink, getLinks, batchDelLink, findCoupon, batchBindCoupon, refund } from '@/api/apis'
 import { showToast } from 'vant'
-import { CopyDocument } from '@element-plus/icons-vue'
+import { CopyDocument, CloseBold, Select, Coin } from '@element-plus/icons-vue'
 
 const baseUrl = import.meta.env.VITE_BASE_URL
 const pageData = reactive({
@@ -33,6 +33,20 @@ const tabsActive = ref(0)
 const coupons = ref([])
 const isBatch = ref(false)
 const currentRow = ref({})
+
+const statusMap = {
+	0: 'danger',
+	1: 'primary',
+	2: 'success',
+	3: 'warning'
+}
+
+const statusTextMap = {
+	0: '已关闭',
+	1: '生效中',
+	2: '已下单',
+	3: '已退款'
+}
 
 function onCopyUrl(text) {
 	const textarea = document.createElement('textarea')
@@ -173,12 +187,18 @@ function onBatchCopy() {
 	selectedRows
 }
 
+async function onRefund(row) {
+	await refund({ uuid: row.uuid })
+	showToast('操作退款成功，已释放优惠券')
+	row.status = 3
+}
+
 const banClose = computed(() => {
-	return selectedRows.value.length === 0 || selectedRows.value.some(item => [0, 2].includes(item.status))
+	return selectedRows.value.length === 0 || selectedRows.value.some(item => [0, 2, 3].includes(item.status))
 })
 
 const banOpen = computed(() => {
-	return selectedRows.value.length === 0 || selectedRows.value.some(item => [1, 2].includes(item.status))
+	return selectedRows.value.length === 0 || selectedRows.value.some(item => [1, 2, 3].includes(item.status))
 })
 
 const tabList = computed(() => {
@@ -200,6 +220,18 @@ const LabelText = computed(() => {
 
 const isAreadySelect = computed(() => {
 	return isBatch.value ? coupons.value.length === selectedRows.value.length : couponList.value.some(s => s.checked)
+})
+
+const statusType = computed(() => {
+	return (status) => {
+		return statusMap[status]
+	}
+})
+
+const statusText = computed(() => {
+	return (status) => {
+		return statusTextMap[status]
+	}
 })
 
 onMounted(async () => {
@@ -266,8 +298,8 @@ onMounted(async () => {
 			</el-table-column>
 			<el-table-column prop="status" label="链接状态" width="100">
 				<template #default="scope">
-					<el-tag :type="scope.row.status === 0 ? 'danger' : scope.row.status === 1 ? 'primary' : 'success'">
-						{{ scope.row.status === 0 ? '已关闭' : scope.row.status === 1 ? '生效中' : '已下单' }}
+					<el-tag :type="statusType(scope.row.status)">
+						{{ statusText(scope.row.status) }}
 					</el-tag>
 				</template>
 			</el-table-column>
@@ -283,16 +315,50 @@ onMounted(async () => {
 			</el-table-column>
 			<el-table-column prop="orderAt" label="下单时间" width="160" />
 			<el-table-column prop="createdAt" label="创建时间" width="160" />
-			<el-table-column fixed="right" label="操作" min-width="120">
+			<el-table-column fixed="right" label="操作" min-width="150">
 				<template #default="scope">
-					<el-button link type="primary" size="small" @click="onToggleUrlStatus([scope.row.uuid])"
-						:disabled="[0, 2].includes(scope.row.status)">
-						关闭链接
-					</el-button>
-					<el-button link type="primary" size="small" @click="onToggleUrlStatus([scope.row.uuid], false)"
-						:disabled="[1, 2].includes(scope.row.status)">
-						恢复链接
-					</el-button>
+					<el-tooltip
+						effect="dark"
+						content="关闭链接"
+						placement="top"
+					>
+						<el-button
+							type="danger"
+							:icon="CloseBold"
+							circle
+							size="small"
+							@click="onToggleUrlStatus([scope.row.uuid])"
+							:disabled="[0, 2, 3].includes(scope.row.status)"
+						/>
+					</el-tooltip>
+					<el-tooltip
+						effect="dark"
+						content="恢复链接"
+						placement="top"
+					>
+						<el-button
+							type="primary"
+							:icon="Select"
+							circle
+							size="small"
+							@click="onToggleUrlStatus([scope.row.uuid], false)"
+							:disabled="[1, 2, 3].includes(scope.row.status)"
+						/>
+					</el-tooltip>
+					<el-tooltip
+						effect="dark"
+						content="申请退款"
+						placement="top"
+					>
+						<el-button
+							type="warning"
+							:icon="Coin"
+							circle
+							size="small"
+							@click="onRefund(scope.row)"
+							:disabled="scope.row.status !== 2"
+						/>
+					</el-tooltip>
 				</template>
 			</el-table-column>
 		</el-table>

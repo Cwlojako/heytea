@@ -87,3 +87,7 @@ export function editGroup(params) {
 export function getGroups() {
     return axios.get('/getGroups')
 }
+
+export function refund(params) {
+    return axios.post('/refund', params)
+}

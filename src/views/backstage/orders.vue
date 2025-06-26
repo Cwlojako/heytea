@@ -19,7 +19,8 @@ const pageData = reactive({
 })
 const queryParams = reactive({
 	phone: '',
-	date: []
+	date: [],
+	signal: ''
 })
 let orderInfo = reactive({
 	shop: {},
@@ -135,6 +136,15 @@ onMounted(() => {
 							@change="getList"
 						/>
 					</el-form-item>
+					<el-form-item label="链接uuid" prop="signal">
+						<el-input
+							v-model="queryParams.signal"
+							placeholder="链接uuid"
+							clearable
+							style="width: 200px;"
+							@change="getList"
+						/>
+					</el-form-item>
 					<el-form-item label="下单时间" prop="date">
 						<el-date-picker
 							v-model="queryParams.date"
@@ -164,12 +174,13 @@ onMounted(() => {
 				@selection-change="onSelectionChange"
 			>
 				<el-table-column type="selection" width="60" />
-				<el-table-column prop="order_no" label="订单号">
+				<el-table-column prop="order_no" label="订单号" width="210">
 					<template #default="scope">
 						<span style="color: #1890ff; cursor: pointer;" @click="getOrderDetail(scope.row)">{{ scope.row.order_no }}</span>
 					</template>
 				</el-table-column>
 				<el-table-column prop="phone" label="手机账号" />
+				<el-table-column prop="signal" label="链接uuid" />
 				<el-table-column prop="price" label="成交价格">
 					<template #default="scope">
 						<span style="color: #1890ff;">￥{{ scope.row.price }}</span>
