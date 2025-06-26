@@ -1,5 +1,4 @@
 <script setup>
-	import { encrypt } from '@/utils/crypto'
 	import { showToast } from 'vant'
 	import { useRoute, useRouter } from 'vue-router'
 	import { generateLink, findCoupon, closeOrOpenLink, generateLinksBatch } from '@/api/apis'
@@ -29,16 +28,12 @@
 	})
 
 	function onGetUuid() {
-		uuid.value = Array.from({ length: 16 }, () =>
+		return Array.from({ length: 16 }, () =>
 			Math.floor(Math.random() * 16).toString(16)
 		).join('')
-		return uuid.value
 	}
 
 	async function onGenerateUrl() {
-		const p = encodeURIComponent(encrypt(price.value))
-		const ph = encodeURIComponent(encrypt(phone.value))
-		
 		if (isBatch.value) {
 			let uuids = []
 			let couponIds = []
@@ -47,10 +42,10 @@
 				let uuid = onGetUuid()
 				uuids.push(uuid)
 				if (coupons.value.length) {
-					couponIds.push(coupons[i])
-					urls.push(`${window.location.origin}/store?u=${uuid}&p=${p}&ph=${ph}&c=${coupons[i]}`)
+					couponIds.push(coupons.value[i])
+					urls.push(`${window.location.origin}/store?u=${uuid}&c=${coupons.value[i]}`)
 				} else {
-					urls.push(`${window.location.origin}/store?u=${uuid}&p=${p}&ph=${ph}`)
+					urls.push(`${window.location.origin}/store?u=${uuid}`)
 				}
 			}
 			
@@ -64,9 +59,10 @@
 				couponIds
 			}
 			coupons.value = []
+			coupon.value = ''
 			await generateLinksBatch(params)
 		} else {
-			let res = `${window.location.origin}/store?u=${uuid.value}&p=${p}&ph=${ph}`
+			let res = `${window.location.origin}/store?u=${uuid.value}`
 			if (coupon.value) {
 				res += `&c=${coupon.value}`
 			}
@@ -110,7 +106,7 @@
 		list.value = res.map(m => {
 			return {
 				...m,
-				checked: m.id == coupon.value
+				checked: isBatch.value ? coupons.value.includes(m.id) : m.id == coupon.value
 			}
 		})
 	}
@@ -122,6 +118,11 @@
 
 	function onConfirm() {
 		couponVisible.value = false
+		if (isBatch.value) {
+			coupon.value = coupons.value.join(',')
+		} else {
+			coupon.value = list.value.find(f => f.checked).id
+		}
 		list.value = []
 	}
 
@@ -136,7 +137,6 @@
 		} else {
 			if (item.checked) {
 				list.value.filter(i => i.id !== item.id).forEach(i => i.checked = false)
-				coupon.value = item.id
 			}
 		}
 		
@@ -162,6 +162,13 @@
 	function toBackstage() {
 		const routeData = router.resolve({ name: 'Backstage' })
 		window.open(routeData.href, '_blank')
+	}
+
+	function onClearCoupon() {
+		if (isBatch.value) {
+			coupons.value = []
+		}
+		coupon.value = ''
 	}
 
 	const isReady = computed(() => {
@@ -211,7 +218,7 @@
 		</van-field>
 		<van-field label='UUID' v-model="uuid" readonly v-if="!!!isBatch">
 			<template #button>
-				<van-button size="small" type="primary" @click="onGetUuid">获取UUID</van-button>
+				<van-button size="small" type="primary" @click="uuid = onGetUuid()">获取UUID</van-button>
 			</template>
 		</van-field>
 		<van-field label="价格" v-model="price" type="number" placeholder="请输入喜茶原价"/>
@@ -225,7 +232,7 @@
 		>
 			<template #button>
 				<div class="btn_box">
-					<van-icon class="clear_icon" v-if="coupon" name="clear" size="18" @click="coupon = ''"/>
+					<van-icon class="clear_icon" v-if="coupon" name="clear" size="18" @click="onClearCoupon"/>
 					<van-button size="small" type="primary" @click="couponVisible = true" :disabled="!couponReady">选择优惠券</van-button>
 				</div>
 			</template>
@@ -276,7 +283,7 @@
 										</div>
 									</section>
 									<section>
-										<van-checkbox v-model="item.checked" @change="(val) => onChecked(item)" checked-color="#131313" :disabled="item.disabled"></van-checkbox>
+										<van-checkbox v-model="item.checked" @change="(val) => onChecked(item)" checked-color="#131313" :disabled="!!item.disabled"></van-checkbox>
 									</section>
 								</div>
 							</div>
@@ -284,7 +291,7 @@
 					</van-tab>
 				</van-tabs>
 				<div class="bottom_btn">
-					<div class="selected_text">
+					<div class="selected_text" v-if="isBatch">
 						{{ coupons.length }} / {{ batchCount }}
 					</div>
 					<van-button @click="onCancel">取 消</van-button>

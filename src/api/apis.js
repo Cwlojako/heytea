@@ -48,8 +48,16 @@ export function batchDelLink(params) {
     return axios.post('/batchDelLink', params)
 }
 
+export function getLinkDetails(uuid) {
+    return axios.get(`/getLinkDetails?uuid=${uuid}`)
+}
+
 export function findCoupon(params) {
     return axios.post('/findCoupon', params)
+}
+
+export function batchBindCoupon(params) {
+    return axios.post('/batchBindCoupon', params)
 }
 
 export function getLinks(params) {

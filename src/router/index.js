@@ -14,16 +14,16 @@ const router = createRouter({
         keepAlive: true
       },
       beforeEnter: async (to, from, next) => {
-        const { u, ph } = to.query
+        const { u } = to.query
         if (u) {
           try {
             const { data: isClose } = await axios.get(`${baseUrl}/isLinkClosed?uuid=${u}`)
             if (isClose.data) {
               next({ name: '404'})
             } else {
-              const { data: res } = await axios.get(`${baseUrl}/checkOrder?signal=${u}&ph=${ph}`)
+              const { data: res } = await axios.get(`${baseUrl}/checkOrder?signal=${u}`)
               if (res.data) {
-                next({ name: 'OrderDetail', params: { u }, query: { ph } })
+                next({ name: 'OrderDetail', params: { u } })
               } else {
                 next()
               }
@@ -44,16 +44,16 @@ const router = createRouter({
         keepAlive: true
       },
       beforeEnter: async (to, from, next) => {
-        const { u, ph } = to.query
+        const { u } = to.query
         if (u) {
           try {
             const { data: isClose } = await axios.get(`${baseUrl}/isLinkClosed?uuid=${u}`)
             if (isClose.data) {
               next({ name: '404'})
             } else {
-              const { data: res } = await axios.get(`${baseUrl}/checkOrder?signal=${u}&ph=${ph}`)
+              const { data: res } = await axios.get(`${baseUrl}/checkOrder?signal=${u}`)
               if (res.data) {
-                next({ name: 'OrderDetail', params: { u }, query: { ph } })
+                next({ name: 'OrderDetail', params: { u } })
               } else {
                 next()
               }

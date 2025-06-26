@@ -1,5 +1,5 @@
 <script setup>
-import { findStore } from '@/api/apis'
+import { findStore, getLinkDetails } from '@/api/apis'
 import { showToast } from 'vant'
 import { useStoreState } from '@/stores'
 import { useRouter, useRoute } from 'vue-router'
@@ -16,7 +16,7 @@ const loading = ref(false)
 const finished = ref(true)
 const showMaskLoading = ref(false)
 const search = ref()
-const phone = decrypt(decodeURIComponent(route.query.ph))
+const phone = ref('')
 
 const storeState = useStoreState()
 
@@ -28,7 +28,7 @@ async function onSearch(isNext = false) {
 		loadShopIds = list.value.map(m => m.id)
 	}
 	!isNext && (showMaskLoading.value = true)
-	let params = isNext ? { name: keyword.value, loadShopIds, phone } : { name: keyword.value, phone }
+	let params = isNext ? { name: keyword.value, loadShopIds, phone: phone.value } : { name: keyword.value, phone: phone.value }
 	try {
 		let { data: res } = await findStore(params)
 		const { list: _list, isLast } = res
@@ -54,9 +54,9 @@ function toGoods(item) {
 		list: list.value,
 		finished: finished.value
 	})
-	const { u, p, c, ph } = route.query
+	const { u, c } = route.query
 	const { id, name } = item
-	router.push({ name: 'Goods', params: { id }, query: { u, p, c, ph, name } })
+	router.push({ name: 'Goods', params: { id }, query: { u, c, name } })
 }
 
 function onClear() {
@@ -65,6 +65,15 @@ function onClear() {
 }
 
 const debouncedSearch = debounce(() => onSearch(false), 300)
+
+async function _getLinkDetails() {
+	const { data: res } = await getLinkDetails(route.query.u)
+	phone.value = decrypt(res.phone)
+}
+
+onMounted(() => {
+	_getLinkDetails()
+})
 
 onActivated(() => {
 	const { keyword: savedKeyword, list: savedList, finished: savedFinished } = storeState.savedState

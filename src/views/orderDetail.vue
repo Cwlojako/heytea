@@ -1,5 +1,5 @@
 <script setup>
-    import { orderDetail, getExpectTime } from '@/api/apis'
+    import { orderDetail, getExpectTime, getLinkDetails } from '@/api/apis'
     import { showToast } from 'vant'
 	import { useRoute } from 'vue-router'
     import { decrypt } from '@/utils/crypto'
@@ -8,17 +8,17 @@
     const route = useRoute()
     const orderInfo = ref({})
     const expectTimeObj = ref({})
-    const phone = decrypt(decodeURIComponent(route.query.ph))
+    const phone = ref('')
     const timeout = ref(null)
     async function getOrderDetail() {
         const { u } = route.params
-        const { data: res } = await orderDetail(u, phone)
+        const { data: res } = await orderDetail(u, phone.value)
         orderInfo.value = res.orderInfo
     }
 
     async function getTime() {
         const { id, no } = orderInfo.value
-        const { data: res } = await getExpectTime(id, no, phone)
+        const { data: res } = await getExpectTime(id, no, phone.value)
         expectTimeObj.value = res[0]
     }
 
@@ -36,6 +36,11 @@
 			showToast('复制失败')
 		}
 		document.body.removeChild(textarea)
+	}
+
+    async function _getLinkDetails() {
+		const { data: res } = await getLinkDetails(route.params.u)
+		phone.value = decrypt(res.phone)
 	}
 
     const specsText = computed(() => {
@@ -69,6 +74,7 @@
     })
 
     onMounted(async () => {
+        await _getLinkDetails()
         await getOrderDetail()
         if (!orderInfo.value.completedAt) {
             timeout = setTimeout(() => {

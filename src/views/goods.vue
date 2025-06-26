@@ -1,6 +1,6 @@
 <script setup>
 	import { useRoute, useRouter } from 'vue-router'
-	import { findGoods, goodsDetail, settle } from '@/api/apis'
+	import { findGoods, goodsDetail, settle, getLinkDetails } from '@/api/apis'
 	import { showToast } from 'vant'
 	import { useClickAway } from '@vant/use'
 	import debounce from 'lodash/debounce'
@@ -8,10 +8,10 @@
 
 	const route = useRoute()
 	const router = useRouter()
-	const limitPrice = decrypt(decodeURIComponent(route.query.p))
+	const limitPrice = ref(0)
+	const phone = ref('')
 	const uuid = route.query.u
 	const couponId = route.query.c
-	const phone = decrypt(decodeURIComponent(route.query.ph))
 	const baseUrl = import.meta.env.VITE_BASE_URL
 	const keyword = ref('')
 	const list = ref([])
@@ -176,7 +176,7 @@
 
 	async function onRemarkConfirm() {
 		btnLoading.value = true
-		if (+allPrice.value > +limitPrice) {
+		if (+allPrice.value > +limitPrice.value) {
 			showToast({ message: `不满足限制金额`, type: 'fail' })
 			btnLoading.value = false
 			return
@@ -207,7 +207,7 @@
 				products, 
 				signal: uuid,
 				couponId,
-				phone,
+				phone: phone.value,
 				remark: remark.value
 			}
 		)
@@ -227,6 +227,12 @@
 	}, { eventName: 'touchstart' })
 
 	const debouncedSearch = debounce(() => getGoods(keyword.value), 300)
+
+	async function _getLinkDetails() {
+		const { data: res } = await getLinkDetails(route.query.u)
+		phone.value = decrypt(res.phone)
+		limitPrice.value = decrypt(res.price)
+	}
 
 	const totalPrice = computed(() => {
 		return (productDetail.value.price * count.value).toFixed(2)
@@ -255,6 +261,7 @@
 
 	onMounted(() => {
 		getGoods()
+		_getLinkDetails()
 	})
 
 </script>
