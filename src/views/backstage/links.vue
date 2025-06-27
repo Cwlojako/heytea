@@ -23,6 +23,7 @@ const status = ref([
 	{ label: '已关闭', value: 0 },
 	{ label: '生效中', value: 1 },
 	{ label: '已下单', value: 2 },
+	{ label: '已退款', value: 3 }
 ])
 const searchBox = ref()
 const searchBoxHeight = ref(0)
@@ -33,6 +34,7 @@ const tabsActive = ref(0)
 const coupons = ref([])
 const isBatch = ref(false)
 const currentRow = ref({})
+const defaultTime = [new Date(2000, 0, 1, 8, 0, 0), new Date(2000, 0, 1, 23, 59, 59)]
 
 const statusMap = {
 	0: 'danger',
@@ -259,13 +261,14 @@ onMounted(async () => {
 						@change="getList" />
 				</el-form-item>
 				<el-form-item label="链接状态" prop="status">
-					<el-select v-model="queryParams.status" placeholder="链接状态" style="width: 200px;">
+					<el-select v-model="queryParams.status" placeholder="链接状态" style="width: 200px;" clearable>
 						<el-option v-for="item in status" :key="item.value" :label="item.label" :value="item.value" />
 					</el-select>
 				</el-form-item>
 				<el-form-item label="创建时间" prop="date">
 					<el-date-picker v-model="queryParams.date" type="datetimerange" start-placeholder="开始日期"
-						end-placeholder="结束日期" format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" />
+						end-placeholder="结束日期" format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss"
+						:default-time="defaultTime" />
 				</el-form-item>
 				<el-form-item>
 					<el-button @click="onReset(formRef)">重 置</el-button>
@@ -317,47 +320,19 @@ onMounted(async () => {
 			<el-table-column prop="createdAt" label="创建时间" width="160" />
 			<el-table-column fixed="right" label="操作" min-width="150">
 				<template #default="scope">
-					<el-tooltip
-						effect="dark"
-						content="关闭链接"
-						placement="top"
-					>
-						<el-button
-							type="danger"
-							:icon="CloseBold"
-							circle
-							size="small"
+					<el-tooltip effect="dark" content="关闭链接" placement="top">
+						<el-button type="danger" :icon="CloseBold" circle size="small"
 							@click="onToggleUrlStatus([scope.row.uuid])"
-							:disabled="[0, 2, 3].includes(scope.row.status)"
-						/>
+							:disabled="[0, 2, 3].includes(scope.row.status)" />
 					</el-tooltip>
-					<el-tooltip
-						effect="dark"
-						content="恢复链接"
-						placement="top"
-					>
-						<el-button
-							type="primary"
-							:icon="Select"
-							circle
-							size="small"
+					<el-tooltip effect="dark" content="恢复链接" placement="top">
+						<el-button type="primary" :icon="Select" circle size="small"
 							@click="onToggleUrlStatus([scope.row.uuid], false)"
-							:disabled="[1, 2, 3].includes(scope.row.status)"
-						/>
+							:disabled="[1, 2, 3].includes(scope.row.status)" />
 					</el-tooltip>
-					<el-tooltip
-						effect="dark"
-						content="申请退款"
-						placement="top"
-					>
-						<el-button
-							type="warning"
-							:icon="Coin"
-							circle
-							size="small"
-							@click="onRefund(scope.row)"
-							:disabled="scope.row.status !== 2"
-						/>
+					<el-tooltip effect="dark" content="申请退款" placement="top">
+						<el-button type="warning" :icon="Coin" circle size="small" @click="onRefund(scope.row)"
+							:disabled="scope.row.status !== 2" />
 					</el-tooltip>
 				</template>
 			</el-table-column>
