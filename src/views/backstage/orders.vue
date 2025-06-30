@@ -130,6 +130,10 @@ const couponDiscount = computed(() => {
 	}
 })
 
+const giftcard = computed(() => {
+	return orderInfo.packagePayment?.giftcard ?? 0
+})
+
 onMounted(() => {
 	getList()
 })
@@ -245,7 +249,7 @@ onMounted(() => {
 				</el-input>
 			</el-form-item>
 			<el-form-item label="喜卡支付：">
-				<el-input type="number" v-model="orderInfo.packagePayment.giftcard" readonly>
+				<el-input type="number" v-model="giftcard" readonly>
 					<template #prepend>￥</template>
 				</el-input>
 			</el-form-item>

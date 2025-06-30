@@ -1,8 +1,8 @@
 <script setup>
-import { getTokens, setOrUpdateToken, deleteTokens } from '@/api/apis'
+import { getTokens, setOrUpdateToken, deleteTokens, exchangeCoupon } from '@/api/apis'
 import { showToast } from 'vant'
-import { CopyDocument } from '@element-plus/icons-vue'
-import { ElMessageBox } from 'element-plus'
+import { CopyDocument, EditPen, Ticket } from '@element-plus/icons-vue'
+import { ElMessageBox, ElMessage } from 'element-plus'
 
 const baseUrl = import.meta.env.VITE_BASE_URL
 const pageData = reactive({
@@ -22,6 +22,9 @@ const dialogVisible = ref(false)
 const tableData = ref([])
 const selectedRows = ref([])
 const tableRef = ref()
+const currentRow = ref({})
+const couponDialogVisible = ref(false)
+const codes = ref('')
 
 function onCopyUrl(text) {
 	const textarea = document.createElement('textarea')
@@ -60,16 +63,16 @@ function onEdit(row) {
 		confirmButtonText: '确认',
 		cancelButtonText: '取消'
 	})
-	.then(async ({ value }) => {
-		const params = {
-			token: value,
-			phone: row.phone
-		}
-		await setOrUpdateToken(params)
-		ElMessage({ type: 'success', message: `更新成功` })
-		getList()
-	})
-	.catch(() => {})
+		.then(async ({ value }) => {
+			const params = {
+				token: value,
+				phone: row.phone
+			}
+			await setOrUpdateToken(params)
+			ElMessage({ type: 'success', message: `更新成功` })
+			getList()
+		})
+		.catch(() => { })
 }
 
 function onAdd() {
@@ -96,6 +99,24 @@ async function onDel() {
 	getList()
 }
 
+async function onExchange() {
+	let codeArr = codes.value.split('\n')
+	try {
+		couponDialogVisible.value = false
+		await exchangeCoupon({ codes: codeArr, phone: currentRow.value.phone })
+		showToast('兑换成功')
+	} catch (e) {
+		couponDialogVisible.value = false
+		codes.value = ''
+		ElMessage({
+			showClose: true,
+			dangerouslyUseHTMLString: true,
+			message: e.data.message,
+			type: 'error',
+		})
+	}
+}
+
 onMounted(() => {
 	getList()
 })
@@ -103,128 +124,117 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="content_wrapper">
-			<div class="search_box">
-				<el-form inline :model="queryParams" @submit.native.prevent>
-					<el-form-item label="手机账号">
-						<el-input
-							v-model="queryParams.phone"
-							placeholder="手机账号，支持模糊查询"
-							clearable
-							style="width: 200px;"
-							@change="getList"
-						/>
-					</el-form-item>
-					<el-form-item>
-						<el-button type="primary" @click="getList">搜 索</el-button>
-					</el-form-item>
-				</el-form>
-			</div>
-			<div class="btn_box">
-				<el-button type="primary" @click="onAdd">添加</el-button>
-				<el-button type="danger" @click="onDel" :disabled="!selectedRows.length">删除</el-button>
-			</div>
-			<el-table
-				:data="tableData"
-				ref="tableRef"
-				style="width: 100%"
-				stripe
-				border
-				height="calc(100% - 52px - 50px - 50px)"
-				@selection-change="onSelectionChange"
-			>
-				<el-table-column type="selection" width="55" />
-				<el-table-column prop="phone" label="账号" />
-				<el-table-column prop="value" label="Token">
-					<template #default="scope">
-						<el-icon
-							v-if="scope.row.value"
-							size="20"
-							color="#1890ff"
-							@click="onCopyUrl(scope.row.value)"
-							style="cursor: pointer; margin-right: 10px; vertical-align: text-bottom;"
-						>
-							<CopyDocument />
-						</el-icon>
-						<span style="word-break: break-all;">{{ scope.row.value }}</span>
-					</template>
-				</el-table-column>
-				<el-table-column fixed="right" label="操作" width="120">
-					<template #default="scope">
-						<el-button link type="primary" size="small" @click="onEdit(scope.row)">
-							编辑
-						</el-button>
-					</template>
-				</el-table-column>
-			</el-table>
-			<div class="page_box">
-				<el-pagination
-					v-model:current-page="pageData.page"
-					v-model:page-size="pageData.size"
-					:page-sizes="[20, 50, 100, 200, 500]"
-					background
-					layout="sizes, prev, pager, next, total"
-					:total="pageData.total"
-					@size-change="getList"
-					@current-change="getList"
-				/>
-			</div>
-
-			<el-dialog
-				v-model="dialogVisible"
-				title="添加账号"
-				width="500"
-			>
-				<el-form
-					ref="formRef"
-					:model="form"
-					label-width="auto"
-					:rules="{
-						phone: { required: true, message: '请输入手机账号', trigger: 'blur' },
-						token: { required: true, message: '请输入Token', trigger: 'blur' }
-					}"
-				>
-					<el-form-item label="手机账号" prop="phone">
-						<el-input v-model="form.phone" />
-					</el-form-item>
-					<el-form-item label="Token" prop="token">
-						<el-input type="textarea" v-model="form.token" />
-					</el-form-item>
-				</el-form>
-				<template #footer>
-					<div class="dialog-footer">
-						<el-button @click="dialogVisible = false">取消</el-button>
-						<el-button type="primary" @click="onAddAccount(formRef)">确认</el-button>
-					</div>
+	<div class="content_wrapper">
+		<div class="search_box">
+			<el-form inline :model="queryParams" @submit.native.prevent>
+				<el-form-item label="手机账号">
+					<el-input v-model="queryParams.phone" placeholder="手机账号，支持模糊查询" clearable style="width: 200px;"
+						@change="getList" />
+				</el-form-item>
+				<el-form-item>
+					<el-button type="primary" @click="getList">搜 索</el-button>
+				</el-form-item>
+			</el-form>
+		</div>
+		<div class="btn_box">
+			<el-button type="primary" @click="onAdd">添加</el-button>
+			<el-button type="danger" @click="onDel" :disabled="!selectedRows.length">删除</el-button>
+		</div>
+		<el-table :data="tableData" ref="tableRef" style="width: 100%" stripe border
+			height="calc(100% - 52px - 50px - 50px)" @selection-change="onSelectionChange">
+			<el-table-column type="selection" width="55" />
+			<el-table-column prop="phone" label="账号" />
+			<el-table-column prop="value" label="Token">
+				<template #default="scope">
+					<el-icon v-if="scope.row.value" size="20" color="#1890ff" @click="onCopyUrl(scope.row.value)"
+						style="cursor: pointer; margin-right: 10px; vertical-align: text-bottom;">
+						<CopyDocument />
+					</el-icon>
+					<span style="word-break: break-all;">{{ scope.row.value }}</span>
 				</template>
-			</el-dialog>
-    </div>
+			</el-table-column>
+			<el-table-column fixed="right" label="操作" width="200">
+				<template #default="scope">
+					<el-tooltip effect="dark" content="编辑" placement="top">
+						<el-button type="primary" :icon="EditPen" circle size="small" @click="onEdit(scope.row)" />
+					</el-tooltip>
+					<el-tooltip effect="dark" content="兑换优惠券" placement="top">
+						<el-button type="warning" :icon="Ticket" circle size="small"
+							@click="couponDialogVisible = true, currentRow = scope.row" />
+					</el-tooltip>
+				</template>
+			</el-table-column>
+		</el-table>
+		<div class="page_box">
+			<el-pagination v-model:current-page="pageData.page" v-model:page-size="pageData.size"
+				:page-sizes="[20, 50, 100, 200, 500]" background layout="sizes, prev, pager, next, total"
+				:total="pageData.total" @size-change="getList" @current-change="getList" />
+		</div>
+
+		<el-dialog v-model="dialogVisible" title="添加账号" width="500">
+			<el-form ref="formRef" :model="form" label-width="auto" :rules="{
+				phone: { required: true, message: '请输入手机账号', trigger: 'blur' },
+				token: { required: true, message: '请输入Token', trigger: 'blur' }
+			}">
+				<el-form-item label="手机账号" prop="phone">
+					<el-input v-model="form.phone" />
+				</el-form-item>
+				<el-form-item label="Token" prop="token">
+					<el-input type="textarea" v-model="form.token" />
+				</el-form-item>
+			</el-form>
+			<template #footer>
+				<div class="dialog-footer">
+					<el-button @click="dialogVisible = false">取消</el-button>
+					<el-button type="primary" @click="onAddAccount(formRef)">确认</el-button>
+				</div>
+			</template>
+		</el-dialog>
+
+		<el-dialog v-model="couponDialogVisible" title="优惠券兑换" width="500">
+			<el-input v-model="codes" :autosize="{ minRows: 2, maxRows: 8 }" type="textarea"
+				placeholder="请输入兑换码，多个时使用回车换行分隔开" />
+			<template #footer>
+				<div class="dialog-footer">
+					<el-button @click="dialogFormVisible = false">取消</el-button>
+					<el-button type="primary" @click="onExchange">
+						确认
+					</el-button>
+				</div>
+			</template>
+		</el-dialog>
+	</div>
 </template>
 
 <style scoped lang="scss">
-	.content_wrapper {
-		height: 100%;
-		.search_box {
-			height: 50px;
-			.el-form {
-				height: 100%;
-				display: flex;
-				.el-form-item {
-					margin: 0 10px 0 0;
-					display: inline-flex;
-					align-items: center;
-				}
+.content_wrapper {
+	height: 100%;
+
+	.search_box {
+		height: 50px;
+
+		.el-form {
+			height: 100%;
+			display: flex;
+
+			.el-form-item {
+				margin: 0 10px 0 0;
+				display: inline-flex;
+				align-items: center;
 			}
 		}
-		.btn_box {
-			height: 50px;
-			display: flex;
-			align-items: center;
-		}
-		.page_box {
-			margin-top: 20px;
-			display: flex;
-			flex-direction: row-reverse;
-		}
 	}
+
+	.btn_box {
+		height: 50px;
+		display: flex;
+		align-items: center;
+	}
+
+	.page_box {
+		margin-top: 20px;
+		display: flex;
+		flex-direction: row-reverse;
+	}
+}
 </style>

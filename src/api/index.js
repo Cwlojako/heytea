@@ -3,12 +3,14 @@ import { showLoadingToast, showToast } from 'vant'
 
 let loadingToast = null
 const instance = axios.create({
-    baseURL: import.meta.env.VITE_BASE_URL,
-    timeout: 10000
+    baseURL: import.meta.env.VITE_BASE_URL
 })
 
 instance.interceptors.request.use(config => {
     config.header = { ...config.header }
+    if (!config.timeout && !config.noTimeout) {
+        config.timeout = 10000
+    }
     if (config.loading) {
         loadingToast = showLoadingToast({
             message: '加载中...',
@@ -27,22 +29,26 @@ instance.interceptors.response.use(response => {
     if ([200, 0].includes(response.data.code)) {
         return response.data ? response.data : response
     } else {
-        showToast({
-            message: response.data.message,
-            type: 'fail',
-            duration: 2000
-        })
+        if (response.config?.showToast ?? true) {
+            showToast({
+                message: response.data.message,
+                type: 'fail',
+                duration: 2000
+            })
+        }
         return Promise.reject(response)
     }
 }, error => {
     if (error.config.loading) {
         loadingToast.close()
     }
-    showToast({
-        message: error?.response?.data?.message ?? '服务器错误',
-        type: 'fail',
-        duration: 2000
-    })
+    if (response.config?.showToast ?? true) {
+        showToast({
+            message: error?.response?.data?.message ?? '服务器错误',
+            type: 'fail',
+            duration: 2000
+        })
+    }
     return Promise.reject(error)
 })
 

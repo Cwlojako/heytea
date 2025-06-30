@@ -91,3 +91,7 @@ export function getGroups() {
 export function refund(params) {
     return axios.post('/refund', params)
 }
+
+export function exchangeCoupon(params) {
+    return axios.post('/exchangeCoupon', params, { showToast: false, loading: true, noTimeout: true })
+}
