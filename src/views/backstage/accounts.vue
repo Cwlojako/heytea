@@ -1,5 +1,6 @@
 <script setup>
-import { getTokens, setOrUpdateToken, deleteTokens, exchangeCoupon } from '@/api/apis'
+import { exchangeCoupon } from '@/api/coupon'
+import { getTokens, setOrUpdateToken, deleteTokens } from '@/api/token'
 import { showToast } from 'vant'
 import { CopyDocument, EditPen, Ticket } from '@element-plus/icons-vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
@@ -143,7 +144,14 @@ onMounted(() => {
 		<el-table :data="tableData" ref="tableRef" style="width: 100%" stripe border
 			height="calc(100% - 52px - 50px - 50px)" @selection-change="onSelectionChange">
 			<el-table-column type="selection" width="55" />
-			<el-table-column prop="phone" label="账号" />
+			<el-table-column prop="phone" label="账号" width="180">
+				<template #default="scope">
+					<div style="display: flex;">
+						<span>{{ scope.row.phone }}</span>
+						<el-tag size="small" style="margin-left: 5px;" type="success">{{ scope.row.groupName }}</el-tag>
+					</div>
+				</template>
+			</el-table-column>
 			<el-table-column prop="value" label="Token">
 				<template #default="scope">
 					<el-icon v-if="scope.row.value" size="20" color="#1890ff" @click="onCopyUrl(scope.row.value)"

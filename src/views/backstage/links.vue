@@ -1,5 +1,6 @@
 <script setup>
-import { closeOrOpenLink, getLinks, batchDelLink, findCoupon, batchBindCoupon, refund } from '@/api/apis'
+import { findCoupon, batchBindCoupon } from '@/api/coupon'
+import { closeOrOpenLink, getLinks, batchDelLink, refund } from '@/api/link'
 import { showToast } from 'vant'
 import { CopyDocument, CloseBold, Select, Coin } from '@element-plus/icons-vue'
 
@@ -286,7 +287,14 @@ onMounted(async () => {
 		<el-table :data="tableData" ref="tableRef" style="width: 100%" stripe border
 			:height="`calc(100% - 52px - ${searchBoxHeight}px - 50px)`" @selection-change="onSelectionChange">
 			<el-table-column type="selection" width="55" />
-			<el-table-column prop="phone" label="账号" width="120" />
+			<el-table-column prop="phone" label="账号" width="180">
+				<template #default="scope">
+					<div style="display: flex;">
+						<span>{{ scope.row.phone }}</span>
+						<el-tag size="small" style="margin-left: 5px;" type="success">{{ scope.row.groupName }}</el-tag>
+					</div>
+				</template>
+			</el-table-column>
 			<el-table-column prop="uuid" label="uuid" width="150" />
 			<el-table-column prop="price" label="价格" width="120" sortable>
 				<template #default="scope">

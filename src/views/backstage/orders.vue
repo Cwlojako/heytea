@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { getOrders, orderDetail } from '@/api/apis'
+import { getOrders, orderDetail } from '@/api/order'
 import { showToast } from 'vant'
 import { CopyDocument, StarFilled } from '@element-plus/icons-vue'
 import { ElMessageBox, TableColumnCtx } from 'element-plus'
@@ -173,7 +173,14 @@ onMounted(() => {
 						scope.row.order_no }}</span>
 				</template>
 			</el-table-column>
-			<el-table-column prop="phone" label="手机账号" />
+			<el-table-column prop="phone" label="账号" width="200">
+				<template #default="scope">
+					<div style="display: flex;">
+						<span>{{ scope.row.phone }}</span>
+						<el-tag size="small" style="margin-left: 5px;" type="success">{{ scope.row.groupName }}</el-tag>
+					</div>
+				</template>
+			</el-table-column>
 			<el-table-column prop="signal" label="链接uuid" />
 			<el-table-column prop="price" label="成交价格">
 				<template #default="scope">

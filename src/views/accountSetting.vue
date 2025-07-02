@@ -1,5 +1,6 @@
 <script setup>
-import { getAccounts, setOrUpdateToken, addGroup, editGroup, getGroups } from '@/api/apis'
+import { addGroup, editGroup, getGroups } from '@/api/group'
+import { getAccounts, setOrUpdateToken } from '@/api/token'
 import { showToast } from 'vant'
 import { useRoute, useRouter } from 'vue-router'
 

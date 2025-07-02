@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { showLoadingToast, showToast } from 'vant'
+import router from '@/router'
 
 let loadingToast = null
 const instance = axios.create({
@@ -18,6 +19,10 @@ instance.interceptors.request.use(config => {
             forbidClick: true,
             loadingType: 'spinner'
         })
+    }
+    const token = JSON.parse(localStorage.getItem('userState') || '{}')?.userInfo?.token ?? ''
+    if (token) {
+        config.headers['Authorization'] = `Bearer ${token}`
     }
     return config
 })
@@ -42,12 +47,15 @@ instance.interceptors.response.use(response => {
     if (error.config.loading) {
         loadingToast.close()
     }
-    if (response.config?.showToast ?? true) {
+    if (error.config?.showToast ?? true) {
         showToast({
             message: error?.response?.data?.message ?? '服务器错误',
             type: 'fail',
             duration: 2000
         })
+    }
+    if (error.response?.status === 401) {
+        router.replace({ name: 'Login' }) // 重定向到登录页
     }
     return Promise.reject(error)
 })

@@ -1,5 +1,6 @@
 <script setup>
-import { findStore, getLinkDetails } from '@/api/apis'
+import { findStore } from '@/api/client'
+import { getLinkDetails } from '@/api/link'
 import { showToast } from 'vant'
 import { useStoreState } from '@/stores'
 import { useRouter, useRoute } from 'vue-router'
@@ -37,7 +38,7 @@ async function onSearch(isNext = false) {
 		finished.value = isLast
 		loading.value = false
 		!isNext && (showMaskLoading.value = false)
-	} catch(err) {
+	} catch (err) {
 		loading.value = false
 		finished.value = true
 		!isNext && (showMaskLoading.value = false)
@@ -99,32 +100,16 @@ onDeactivated(() => {
 				<van-step>查取茶号</van-step>
 			</van-steps>
 		</div>
-		<van-search
-			ref="search"
-			v-model="keyword"
-			placeholder="请输入门店关键字，门店名称必须跟小程序一致"
-			background="#fff"
-			@search="(val) => onSearch(false)"
-			@update:model-value="debouncedSearch"
-			@clear="onClear"
-		/>
+		<van-search ref="search" v-model="keyword" placeholder="请输入门店关键字，门店名称必须跟小程序一致" background="#fff"
+			@search="(val) => onSearch(false)" @update:model-value="debouncedSearch" @clear="onClear" />
 		<section class="list_box">
 			<div class="loading_box" v-if="showMaskLoading">
-				<van-loading type="spinner"/>
+				<van-loading type="spinner" />
 			</div>
-			<van-list
-				v-if="list.length"
-				v-model:loading="loading"
-				:finished="finished"
-				finished-text="没有更多了"
-				@load="loadMore"
-			>
-				<div
-					v-for="item in list"
-					:key="item"
-					:class="['list-item', { disabled: !item.is_actived }]"
-					@click="toGoods(item)"
-				>
+			<van-list v-if="list.length" v-model:loading="loading" :finished="finished" finished-text="没有更多了"
+				@load="loadMore">
+				<div v-for="item in list" :key="item" :class="['list-item', { disabled: !item.is_actived }]"
+					@click="toGoods(item)">
 					<span class="top_name">
 						{{ item.name }}
 						<van-tag type="warning" v-if="!item.is_actived">门店休息中</van-tag>
@@ -132,13 +117,8 @@ onDeactivated(() => {
 					<span class="bottom_address">{{ item.address }}</span>
 				</div>
 			</van-list>
-			<van-image
-				v-else
-				width="150"
-				height="150"
-				src="https://static.heytea.com/taro_trial/v1/img/my/me_img_head_login.png"
-				round
-			/>
+			<van-image v-else width="150" height="150"
+				src="https://static.heytea.com/taro_trial/v1/img/my/me_img_head_login.png" round />
 		</section>
 	</div>
 </template>
@@ -149,18 +129,22 @@ onDeactivated(() => {
 	height: 100vh;
 	box-sizing: border-box;
 	overflow-y: hidden;
+
 	.step_box {
 		width: 100%;
 		box-sizing: border-box;
 		overflow: hidden;
+
 		.van-steps {
 			width: 100%;
 			box-sizing: border-box;
 			font-size: 14px;
-			::v-deep .van-step__title{
+
+			::v-deep .van-step__title {
 				font-size: 14px;
 			}
 		}
+
 		.title {
 			margin-bottom: 20px;
 			text-align: center;
@@ -168,14 +152,17 @@ onDeactivated(() => {
 			font-weight: bolder;
 		}
 	}
+
 	.van-search {
 		padding: 0;
 		border: 1px solid #f1f1f1;
 	}
+
 	.list_box {
 		height: calc(100% - 36px - 102px);
 		overflow-y: auto;
 		position: relative;
+
 		.loading_box {
 			position: absolute;
 			top: 0;
@@ -183,26 +170,31 @@ onDeactivated(() => {
 			bottom: 0;
 			right: 0;
 			@include flexCenter;
-			background-color: rgba(0,0,0,.5);
+			background-color: rgba(0, 0, 0, .5);
 			z-index: 99;
 		}
+
 		.van-image {
 			margin: 50px auto 0;
 			display: block;
 		}
 	}
+
 	.list-item {
 		@include flexCenterColumn(flex-start);
 		padding: 16px;
 		border-bottom: 1px solid #eee;
 		gap: 5px;
+
 		&.disabled {
 			background-color: #f7f7f7;
 		}
+
 		.top_name {
 			font-size: 16px;
 			color: #333;
 		}
+
 		.bottom_address {
 			font-size: 14px;
 			color: #999;
