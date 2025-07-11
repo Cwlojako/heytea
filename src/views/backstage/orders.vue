@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { getOrders, orderDetail } from '@/api/order'
+import { getGroups } from '@/api/group'
 import { showToast } from 'vant'
 import { CopyDocument, StarFilled } from '@element-plus/icons-vue'
 import { ElMessageBox, TableColumnCtx } from 'element-plus'
@@ -20,7 +21,8 @@ const pageData = reactive({
 const queryParams = reactive({
 	phone: '',
 	date: [],
-	signal: ''
+	signal: '',
+	groups: []
 })
 let orderInfo = reactive({
 	shop: {},
@@ -33,6 +35,7 @@ const selectedRows = ref([])
 const tableRef = ref()
 const formRef = ref()
 const defaultTime = [new Date(2000, 0, 1, 8, 0, 0), new Date(2000, 0, 1, 23, 59, 59)]
+const groups = ref([])
 
 function onCopyUrl(text) {
 	const textarea = document.createElement('textarea')
@@ -69,7 +72,6 @@ async function getOrderDetail(row) {
 		orderInfo = Object.assign(orderInfo, res.orderInfo)
 		drawerVisible.value = true
 	} catch { }
-
 }
 
 function onSelectionChange(selected) {
@@ -86,7 +88,7 @@ const getSummaries = (param: SummaryMethodProps) => {
 			])
 			return
 		}
-		if (index === 2) {
+		if (index === 2 || index === 3) {
 			sums[index] = 'N/A'
 			return
 		}
@@ -113,6 +115,16 @@ function onReset(form) {
 	getList()
 }
 
+async function _getGroups() {
+	const { data: res } = await getGroups()
+	groups.value = res.map((item) => {
+		return {
+			label: item.name,
+			value: item._id
+		}
+	})
+}
+
 const specsText = computed(() => {
 	return (item) => {
 		return item.materials.data.map((m) => m.name).join('，')
@@ -136,6 +148,7 @@ const giftcard = computed(() => {
 
 onMounted(() => {
 	getList()
+	_getGroups()
 })
 
 </script>
@@ -147,6 +160,11 @@ onMounted(() => {
 				<el-form-item label="手机账号" prop="phone">
 					<el-input v-model="queryParams.phone" placeholder="手机账号，支持模糊查询" clearable style="width: 200px;"
 						@change="getList" />
+				</el-form-item>
+				<el-form-item label="账号分组" prop="groups">
+					<el-select v-model="queryParams.groups" placeholder="账号分组" style="width: 200px;" clearable multiple>
+						<el-option v-for="item in groups" :key="item.value" :label="item.label" :value="item.value" />
+					</el-select>
 				</el-form-item>
 				<el-form-item label="链接uuid" prop="signal">
 					<el-input v-model="queryParams.signal" placeholder="链接uuid" clearable style="width: 200px;"
@@ -177,7 +195,8 @@ onMounted(() => {
 				<template #default="scope">
 					<div style="display: flex;">
 						<span>{{ scope.row.phone }}</span>
-						<el-tag size="small" style="margin-left: 5px;" type="success">{{ scope.row.groupName }}</el-tag>
+						<el-tag size="small" style="margin-left: 5px;" type="success">{{ scope.row.groupName || '默认分组'
+						}}</el-tag>
 					</div>
 				</template>
 			</el-table-column>

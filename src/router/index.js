@@ -1,6 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { checkOrder } from '@/api/client'
-import { isLinkClosed } from '@/api/link'
+import { checkOrder, isLinkClosed } from '@/api/client'
+import { decrypt } from '@/utils/crypto'
+
+const userState = JSON.parse(localStorage.getItem('userState') || '{}')
+const userInfo = userState.userInfo ? JSON.parse(decrypt(userState.userInfo)) : null
+const roles = userInfo?.roles ?? []
+
+function judgeRole(allowedRoles) {
+  return allowedRoles.some(role => roles.includes(role))
+}
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -17,11 +25,11 @@ const router = createRouter({
         if (u) {
           try {
             const { data: isClose } = await isLinkClosed(u)
-            if (isClose.data) {
+            if (isClose) {
               next({ name: '404'})
             } else {
               const { data: res } = await checkOrder(u)
-              if (res.data) {
+              if (res) {
                 next({ name: 'OrderDetail', params: { u } })
               } else {
                 next()
@@ -47,11 +55,11 @@ const router = createRouter({
         if (u) {
           try {
             const { data: isClose } = await isLinkClosed(u)
-            if (isClose.data) {
+            if (isClose) {
               next({ name: '404'})
             } else {
               const { data: res } = await checkOrder(u)
-              if (res.data) {
+              if (res) {
                 next({ name: 'OrderDetail', params: { u } })
               } else {
                 next()
@@ -107,6 +115,13 @@ const router = createRouter({
           meta: {
             title: '链接管理',
             roles: ['Developer', 'Admin', 'J']
+          },
+          beforeEnter: (to, from, next) => {
+            if (judgeRole(['Developer', 'Admin', 'J'])) {
+              next()
+            } else {
+              next({ name: '404' })
+            }
           }
         },
         {
@@ -116,6 +131,13 @@ const router = createRouter({
           meta: {
             title: '账号管理',
             roles: ['Developer', 'Admin', 'Q']
+          },
+          beforeEnter: (to, from, next) => {
+            if (judgeRole(['Developer', 'Admin', 'Q'])) {
+              next()
+            } else {
+              next({ name: '404' })
+            }
           }
         },
         {
@@ -125,6 +147,13 @@ const router = createRouter({
           meta: {
             title: '订单管理',
             roles: ['Developer', 'Admin', 'K']
+          },
+          beforeEnter: (to, from, next) => {
+            if (judgeRole(['Developer', 'Admin', 'K'])) {
+              next()
+            } else {
+              next({ name: '404' })
+            }
           }
         }
       ]

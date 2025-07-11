@@ -1,5 +1,5 @@
 import axios from '../axios'
-const Prefix = '/cilent'
+const Prefix = '/client'
 
 export function findStore(params) {
     return axios.post(Prefix + '/findStore', params)
@@ -27,4 +27,12 @@ export function checkOrder(u) {
 
 export function getExpectTime(id = '', no='', phone = '') {
     return axios.get(Prefix + `/getExpectTime?orderId=${id}&orderNo=${no}&phone=${phone}`, { loading: true })
+}
+
+export function isLinkClosed(u) {
+    return axios.get(Prefix + `/isLinkClosed?uuid=${u}`)
+}
+
+export function getLinkDetails(uuid) {
+    return axios.get(Prefix + `/getLinkDetails?uuid=${uuid}`)
 }

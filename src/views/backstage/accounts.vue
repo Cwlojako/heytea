@@ -144,11 +144,12 @@ onMounted(() => {
 		<el-table :data="tableData" ref="tableRef" style="width: 100%" stripe border
 			height="calc(100% - 52px - 50px - 50px)" @selection-change="onSelectionChange">
 			<el-table-column type="selection" width="55" />
-			<el-table-column prop="phone" label="账号" width="180">
+			<el-table-column prop="phone" label="账号" width="200">
 				<template #default="scope">
 					<div style="display: flex;">
 						<span>{{ scope.row.phone }}</span>
-						<el-tag size="small" style="margin-left: 5px;" type="success">{{ scope.row.groupName }}</el-tag>
+						<el-tag size="small" style="margin-left: 5px;" type="success">{{ scope.row.groupName || '默认分组'
+						}}</el-tag>
 					</div>
 				</template>
 			</el-table-column>

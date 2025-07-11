@@ -1,7 +1,6 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router'
-import { findGoods, goodsDetail, settle } from '@/api/client'
-import { getLinkDetails } from '@/api/link'
+import { findGoods, goodsDetail, settle, getLinkDetails } from '@/api/client'
 import { showToast } from 'vant'
 import { useClickAway } from '@vant/use'
 import debounce from 'lodash/debounce'

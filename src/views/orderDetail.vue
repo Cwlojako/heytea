@@ -1,6 +1,5 @@
 <script setup>
-import { orderDetail, getExpectTime } from '@/api/client'
-import { getLinkDetails } from '@/api/link'
+import { orderDetail, getExpectTime, getLinkDetails } from '@/api/client'
 import { showToast } from 'vant'
 import { useRoute } from 'vue-router'
 import { decrypt } from '@/utils/crypto'

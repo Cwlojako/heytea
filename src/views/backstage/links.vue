@@ -13,6 +13,7 @@ const pageData = reactive({
 const queryParams = reactive({
 	phone: '',
 	uuid: '',
+	couponId: '',
 	status: '',
 	date: [],
 	price: ''
@@ -257,6 +258,10 @@ onMounted(async () => {
 					<el-input v-model="queryParams.uuid" placeholder="uuid" clearable style="width: 200px;"
 						@change="getList" />
 				</el-form-item>
+				<el-form-item label="优惠券id" prop="couponId">
+					<el-input v-model="queryParams.couponId" placeholder="couponId" clearable style="width: 200px;"
+						@change="getList" />
+				</el-form-item>
 				<el-form-item label="价格" prop="price">
 					<el-input v-model="queryParams.price" placeholder="价格" clearable style="width: 200px;"
 						@change="getList" />
@@ -287,11 +292,12 @@ onMounted(async () => {
 		<el-table :data="tableData" ref="tableRef" style="width: 100%" stripe border
 			:height="`calc(100% - 52px - ${searchBoxHeight}px - 50px)`" @selection-change="onSelectionChange">
 			<el-table-column type="selection" width="55" />
-			<el-table-column prop="phone" label="账号" width="180">
+			<el-table-column prop="phone" label="账号" width="200">
 				<template #default="scope">
 					<div style="display: flex;">
 						<span>{{ scope.row.phone }}</span>
-						<el-tag size="small" style="margin-left: 5px;" type="success">{{ scope.row.groupName }}</el-tag>
+						<el-tag size="small" style="margin-left: 5px;" type="success">{{ scope.row.groupName || '默认分组'
+						}}</el-tag>
 					</div>
 				</template>
 			</el-table-column>

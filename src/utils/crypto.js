@@ -3,6 +3,9 @@ import CryptoJS from 'crypto-js'
 const secretKey = 'cwlojako'
 
 export function encrypt(text) {
+    if (typeof text === 'number') {
+        text = String(text)
+    }
     return CryptoJS.AES.encrypt(text, secretKey).toString()
 }
 

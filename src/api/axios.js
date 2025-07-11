@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { showLoadingToast, showToast } from 'vant'
 import router from '@/router'
+import { decrypt } from '@/utils/crypto'
 
 let loadingToast = null
 const instance = axios.create({
@@ -20,7 +21,10 @@ instance.interceptors.request.use(config => {
             loadingType: 'spinner'
         })
     }
-    const token = JSON.parse(localStorage.getItem('userState') || '{}')?.userInfo?.token ?? ''
+    
+    const userState = JSON.parse(localStorage.getItem('userState') || '{}')
+    const userInfo = userState.userInfo ? JSON.parse(decrypt(userState.userInfo)) : null
+    const token = userInfo?.token ?? ''
     if (token) {
         config.headers['Authorization'] = `Bearer ${token}`
     }
@@ -44,6 +48,7 @@ instance.interceptors.response.use(response => {
         return Promise.reject(response)
     }
 }, error => {
+    console.log(error)
     if (error.config.loading) {
         loadingToast.close()
     }

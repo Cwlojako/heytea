@@ -105,17 +105,17 @@ async function _getGroups() {
             text: m.name,
             value: m._id
         }
-    }).sort((a, b) => (a.name === '默认分组' ? -1 : b.name === '默认分组' ? 1 : 0))
+    })
 }
 
 const listInGroup = computed(() => {
     return (item) => {
-        if (item.name === '默认分组') {
-            return list.value.filter(f => (f.groupId === item._id) || !f.groupId)
-        } else {
-            return list.value.filter(f => f.groupId === item._id)
-        }
+        return list.value.filter(f => f.groupId === item._id)
     }
+})
+
+const listNotInGroup = computed(() => {
+    return list.value.filter(f => !f.groupId)
 })
 
 onMounted(() => {
@@ -132,11 +132,18 @@ onMounted(() => {
             <p class="title">账号列表</p>
             <div class="scroll_box">
                 <van-collapse v-model="activeName" accordion>
+                    <van-collapse-item name="default" title="默认分组">
+                        <van-cell-group v-if="listNotInGroup.length">
+                            <van-cell v-for="(i, idx) in listNotInGroup" class="inner_cell" :key="i.phone"
+                                :title="i.phone" :label="i.token" is-link @click="onEdit(i)" />
+                        </van-cell-group>
+                        <div v-else>该分组暂无账号</div>
+                    </van-collapse-item>
                     <van-collapse-item v-for="(item, index) in groups" :name="item.value">
                         <template #title>
                             <div>
                                 {{ item.text }}
-                                <van-icon v-if="item.name !== '默认分组'"
+                                <van-icon
                                     @click.stop="groupName = item.name, isEdit = true, groupVisible = true, currGroup = item"
                                     name="edit" color="#1989fa" size="20" style="margin-left:5px;" />
                             </div>

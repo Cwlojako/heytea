@@ -2,18 +2,16 @@
 import { useRouter, useRoute } from 'vue-router'
 import myRoute from '@/router'
 import { useUserState } from '@/stores/user'
+import { decrypt } from '@/utils/crypto'
 
 const userState = useUserState()
 const router = useRouter()
 const route = useRoute()
 const defaultActive = ref('')
 
-console.log(userState.userInfo)
-console.log('----', myRoute.getRoutes())
-
 const backstageRoutes = myRoute.getRoutes().find(f => f.path === '/backstage').children || []
-const roles = userState.userInfo?.roles || []
-console.log('backstageRoutes', backstageRoutes)
+const userInfo = userState.userInfo ? JSON.parse(decrypt(userState.userInfo)) : {}
+const roles = userInfo.roles || []
 
 let menus = backstageRoutes.filter(route => {
 	if (route.meta && route.meta.roles) {
@@ -24,10 +22,6 @@ let menus = backstageRoutes.filter(route => {
 	title: m.meta.title,
 	index: m.name
 }))
-
-console.log('menus', menus)
-
-
 
 function go(name) {
 	defaultActive.value = name

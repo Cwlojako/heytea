@@ -1,6 +1,6 @@
 <script setup>
 import { findStore } from '@/api/client'
-import { getLinkDetails } from '@/api/link'
+import { getLinkDetails } from '@/api/client'
 import { showToast } from 'vant'
 import { useStoreState } from '@/stores'
 import { useRouter, useRoute } from 'vue-router'

@@ -17,18 +17,10 @@ export function batchDelLink(params) {
     return axios.post(Prefix + '/batchDelLink', params)
 }
 
-export function getLinkDetails(uuid) {
-    return axios.get(`/getLinkDetails?uuid=${uuid}`)
-}
-
 export function getLinks(params) {
     return axios.post(Prefix + '/getLinks', params)
 }
 
 export function refund(params) {
     return axios.post(Prefix + '/refund', params)
-}
-
-export function isLinkClosed(u) {
-    return axios.get(Prefix + `/isLinkClosed?uuid=${u}`)
 }
