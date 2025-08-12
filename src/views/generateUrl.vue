@@ -3,6 +3,7 @@ import { showToast } from 'vant'
 import { useRoute, useRouter } from 'vue-router'
 import { findCoupon } from '@/api/coupon'
 import { generateLink, closeOrOpenLink, generateLinksBatch } from '@/api/link'
+import { CopyDocument } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const baseUrl = import.meta.env.VITE_BASE_URL
@@ -263,32 +264,43 @@ const couponBtnDisabled = computed(() => {
 									不可用
 									<span v-if="item.disabledText">{{ `,${item.disabledText}` }}</span>
 								</div>
-								<div class="left_area">
-									<section>
-										<span class="number">{{ item.discountText }}</span>
-										<span class="unit">{{ item.discountUnit }}</span>
-									</section>
-									<section>
-										<span class="cond">{{ item.thresholdText }}</span>
-									</section>
-								</div>
-								<div class="right_area">
-									<section>
-										<div class="name">
-											<van-tag plain type="primary" v-if="item.bizLabels.length">{{
-												LabelText(item.bizLabels[0]) }}</van-tag>
-											<span>{{ item.name }}</span>
-										</div>
-										<div class="time">
-											<span>{{ item.period_start }} ~ {{ item.period_end }}</span>
-											<p class="expire" v-if="item.soon_expire">{{ item.periodText }}</p>
-										</div>
-									</section>
-									<section>
-										<van-checkbox v-model="item.checked" @click.native="onChecked(item)"
-											checked-color="#131313" :disabled="!!item.disabled"></van-checkbox>
-									</section>
-								</div>
+								<section class="top_box">
+									<span>
+										优惠券ID：{{ item.id }}
+									</span>
+									<el-icon size="20" color="#1890ff" @click.stop="onCopyUrl(item.id)"
+										style="cursor: pointer; margin-right: 10px; vertical-align: text-bottom;">
+										<CopyDocument />
+									</el-icon>
+								</section>
+								<section class="bottom_box">
+									<div class="left_area">
+										<section>
+											<span class="number">{{ item.discountText }}</span>
+											<span class="unit">{{ item.discountUnit }}</span>
+										</section>
+										<section>
+											<span class="cond">{{ item.thresholdText }}</span>
+										</section>
+									</div>
+									<div class="right_area">
+										<section>
+											<div class="name">
+												<van-tag plain type="primary" v-if="item.bizLabels.length">{{
+													LabelText(item.bizLabels[0]) }}</van-tag>
+												<span>{{ item.name }}</span>
+											</div>
+											<div class="time">
+												<span>{{ item.period_start }} ~ {{ item.period_end }}</span>
+												<p class="expire" v-if="item.soon_expire">{{ item.periodText }}</p>
+											</div>
+										</section>
+										<section>
+											<van-checkbox v-model="item.checked" @click.native="onChecked(item)"
+												checked-color="#131313" :disabled="!!item.disabled"></van-checkbox>
+										</section>
+									</div>
+								</section>
 							</div>
 						</div>
 					</van-tab>
@@ -407,14 +419,13 @@ const couponBtnDisabled = computed(() => {
 					padding: 16px;
 
 					.list_item {
-						@include flexYCenter;
 						position: relative;
 						margin-bottom: 10px;
 						background: #fff;
 						min-height: 100px;
 						border-radius: 5px;
 						box-sizing: border-box;
-						padding: 16px 0;
+						padding: 0 10px;
 
 						&:last-child {
 							margin-bottom: 0;
@@ -436,50 +447,72 @@ const couponBtnDisabled = computed(() => {
 							z-index: 1;
 						}
 
-						.left_area {
-							@include flexCenterColumn;
-							flex: 0 0 120px;
-							color: #191919;
-
-							.number {
-								font-size: 28px;
-								font-weight: bold;
+						.top_box {
+							@include flexYCenter();
+							font-size: 16px;
+							color: #333;
+							padding: 10px 0;
+							position: relative;
+							font-weight: bold;
+							&::after {
+								@include bottom-line(#ccc, 1px, dashed);
 							}
-
-							.unit {
-								font-size: 14px;
-							}
-
-							.cond {
-								font-size: 12px;
+							span {
+								margin-right: 10px;
 							}
 						}
 
-						.right_area {
-							flex: 1;
-							@include flexYCenter(space-between);
-							border-left: 1px dashed #ccc;
-							padding: 0 18px;
+						.bottom_box {
+							@include flexYCenter();
+							padding: 10px 0;
 
-							.name {
-								font-size: 14px;
+							.left_area {
+								@include flexCenterColumn;
+								flex: 0 0 120px;
+								color: #191919;
 
-								.van-tag {
-									margin-right: 5px;
-									display: inline-block;
-									vertical-align: text-bottom;
+								.number {
+									font-size: 28px;
+									font-weight: bold;
+								}
+
+								.unit {
+									font-size: 14px;
+								}
+
+								.cond {
+									font-size: 12px;
 								}
 							}
 
-							.time {
-								font-size: 12px;
-								margin-top: 10px;
+							.right_area {
+								flex: 1;
+								@include flexYCenter(space-between);
+								border-left: 1px dashed #ccc;
+								padding: 0 18px;
 
-								.expire {
-									color: #ee3f4d;
+								.name {
+									font-size: 14px;
+
+									.van-tag {
+										margin-right: 5px;
+										display: inline-block;
+										vertical-align: text-bottom;
+									}
+								}
+
+								.time {
+									font-size: 12px;
+									margin-top: 10px;
+
+									.expire {
+										color: #ee3f4d;
+									}
 								}
 							}
 						}
+
+						
 					}
 				}
 			}
