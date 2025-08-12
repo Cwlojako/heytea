@@ -128,15 +128,18 @@ function onConfirm() {
 }
 
 function onChecked(item) {
+	if (item.disabled) return
+	item.checked = !item.checked
+	const checked = item.checked
 	if (isBatch.value) {
-		if (item.checked) {
+		if (checked) {
 			coupons.value.push(item.id)
 		} else {
 			let idx = coupons.value.findIndex(f => f === item.id)
 			coupons.value.splice(idx, 1)
 		}
 	} else {
-		if (item.checked) {
+		if (checked) {
 			list.value.filter(i => i.id !== item.id).forEach(i => i.checked = false)
 		}
 	}
@@ -250,8 +253,12 @@ const couponBtnDisabled = computed(() => {
 							<van-empty image="search" :description="idx === 0 ? '暂无可用优惠券' : '暂无不可用优惠券'" />
 						</div>
 						<div class="list_box" v-else>
-							<div v-for="item in tabList(idx, list)" :key="item.id"
-								:class="['list_item', { disabled: item.disabled }]">
+							<div 
+								v-for="item in tabList(idx, list)"
+								:key="item.id"
+								:class="['list_item', { disabled: item.disabled }]"
+								@click="onChecked(item)"
+							>
 								<div v-if="item.disabled" class="disabled-badge">
 									不可用
 									<span v-if="item.disabledText">{{ `,${item.disabledText}` }}</span>
@@ -278,7 +285,7 @@ const couponBtnDisabled = computed(() => {
 										</div>
 									</section>
 									<section>
-										<van-checkbox v-model="item.checked" @change="(val) => onChecked(item)"
+										<van-checkbox v-model="item.checked" @click.native="onChecked(item)"
 											checked-color="#131313" :disabled="!!item.disabled"></van-checkbox>
 									</section>
 								</div>

@@ -1,9 +1,10 @@
 <script setup>
 import { exchangeCoupon } from '@/api/coupon'
-import { getTokens, setOrUpdateToken, deleteTokens } from '@/api/token'
+import { getTokens, setOrUpdateToken, deleteTokens, getNewToken } from '@/api/token'
 import { showToast } from 'vant'
 import { CopyDocument, EditPen, Ticket } from '@element-plus/icons-vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
+import { encrypt } from '@/utils/crypto'
 
 const baseUrl = import.meta.env.VITE_BASE_URL
 const pageData = reactive({
@@ -26,6 +27,10 @@ const tableRef = ref()
 const currentRow = ref({})
 const couponDialogVisible = ref(false)
 const codes = ref('')
+const editVisible = ref(false)
+const editRow = ref({})
+const authCode = ref('')
+const token = ref('')
 
 function onCopyUrl(text) {
 	const textarea = document.createElement('textarea')
@@ -60,20 +65,8 @@ function onSelectionChange(selected) {
 }
 
 function onEdit(row) {
-	ElMessageBox.prompt(row.phone, '更新Token', {
-		confirmButtonText: '确认',
-		cancelButtonText: '取消'
-	})
-		.then(async ({ value }) => {
-			const params = {
-				token: value,
-				phone: row.phone
-			}
-			await setOrUpdateToken(params)
-			ElMessage({ type: 'success', message: `更新成功` })
-			getList()
-		})
-		.catch(() => { })
+	editVisible.value = true
+	editRow.value = row
 }
 
 function onAdd() {
@@ -116,6 +109,27 @@ async function onExchange() {
 			type: 'error',
 		})
 	}
+}
+
+async function onGetNewToken() {
+	const params = {
+		encryptPhone: editRow.value.encryptPhone,
+		phone: editRow.value.phone,
+		authCode: authCode.value
+	}
+	const { data: res } = await getNewToken(params)
+	token.value = res.token
+}
+
+async function onConfirmNewToken() {
+	const params = {
+		token: token.value,
+		phone: editRow.value.phone
+	}
+	await setOrUpdateToken(params)
+	editVisible.value = false
+	ElMessage({ type: 'success', message: `更新成功` })
+	getList()
 }
 
 onMounted(() => {
@@ -212,6 +226,33 @@ onMounted(() => {
 				</div>
 			</template>
 		</el-dialog>
+
+		<el-dialog
+			v-model="editVisible"
+			title="更新Token"
+			width="500"
+		>
+			<div class="phone_box">
+				<span>手机账号：{{ editRow.phone }}</span>
+			</div>
+			<div class="code_box">
+				<span>验证码：</span>
+				<el-input v-model="authCode" style="width: 200px;" placeholder="请从喜茶APP中获取验证码"/>
+				<el-button type="warning" size="medium" @click="onGetNewToken" style="margin-left: 20px;" :disabled="!authCode || authCode.length !== 6">获取Token</el-button>
+			</div>
+			<div class="token_box">
+				<span>新Token：</span>
+				<el-input type="textarea" v-model="token" :disabled="!!authCode"/>
+			</div>
+			<template #footer>
+				<div class="dialog-footer">
+					<el-button @click="editVisible = false">取消</el-button>
+					<el-button type="primary" @click="onConfirmNewToken" :disabled="!token">
+						确认
+					</el-button>
+				</div>
+			</template>
+		</el-dialog>
 	</div>
 </template>
 
@@ -244,6 +285,18 @@ onMounted(() => {
 		margin-top: 20px;
 		display: flex;
 		flex-direction: row-reverse;
+	}
+	.phone_box, .code_box, .token_box {
+		margin-bottom: 20px;
+		display: flex;
+		align-items: center;
+
+		span {
+			min-width: 70px;
+		}
+		.code_btn {
+			margin-left: 20px;
+		}
 	}
 }
 </style>

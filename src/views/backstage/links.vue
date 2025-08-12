@@ -1,6 +1,6 @@
 <script setup>
 import { findCoupon, batchBindCoupon } from '@/api/coupon'
-import { closeOrOpenLink, getLinks, batchDelLink, refund } from '@/api/link'
+import { closeOrOpenLink, getLinks, batchDelLink, refund, updatePrice } from '@/api/link'
 import { showToast } from 'vant'
 import { CopyDocument, CloseBold, Select, Coin } from '@element-plus/icons-vue'
 
@@ -132,6 +132,31 @@ async function onBindCoupon(row) {
 	await getCouponList(row)
 	currentRow.value = row
 	couponDrawerVisible.value = true
+}
+
+function onEditPrice(row) {
+	const price = ref(row.price)
+	ElMessageBox({
+		title: '修改价格',
+		message: () => h(ElInputNumber, {
+			modelValue: price.value,
+			min: 0,
+			'onUpdate:modelValue': val => (price.value = val)
+		}),
+		showCancelButton: true,
+		confirmButtonText: '确认',
+		cancelButtonText: '取消',
+		beforeClose: async (action, instance, done) => {
+			if (action === 'confirm') {
+				await updatePrice({ uuid: row.uuid, price: price.value })
+				row.price = price.value
+				showToast('修改价格成功')
+				done()
+			} else {
+				done()
+			}
+		}
+	})
 }
 
 async function onBatchBind() {
@@ -302,9 +327,10 @@ onMounted(async () => {
 				</template>
 			</el-table-column>
 			<el-table-column prop="uuid" label="uuid" width="150" />
-			<el-table-column prop="price" label="价格" width="120" sortable>
+			<el-table-column prop="price" label="价格" width="150" sortable>
 				<template #default="scope">
 					<span style="color: #1890ff;">￥{{ scope.row.price }}</span>
+					<el-button v-if="+scope.row.status === 1" size="small" type="warning" style="margin-left: 10px;" plain @click="onEditPrice(scope.row)">修改价格</el-button>
 				</template>
 			</el-table-column>
 			<el-table-column prop="couponId" label="优惠券id" width="150">

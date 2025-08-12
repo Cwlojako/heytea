@@ -24,3 +24,7 @@ export function getLinks(params) {
 export function refund(params) {
     return axios.post(Prefix + '/refund', params)
 }
+
+export function updatePrice(params) {
+    return axios.post(Prefix + '/updatePrice', params)
+}

@@ -16,3 +16,7 @@ export function getTokens(params) {
 export function deleteTokens(params) {
     return axios.post(Prefix + '/deleteTokens', params)
 }
+
+export function getNewToken(params) {
+    return axios.post(Prefix + '/getNewToken', params)
+}
