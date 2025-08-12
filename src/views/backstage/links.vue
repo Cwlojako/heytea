@@ -217,7 +217,7 @@ function onBatchCopy() {
 }
 
 async function onRefund(row) {
-	await refund({ uuid: row.uuid })
+	await refund({ _id: row._id })
 	showToast('操作退款成功，已释放优惠券')
 	row.status = 3
 }
@@ -284,7 +284,7 @@ onMounted(async () => {
 						@change="getList" />
 				</el-form-item>
 				<el-form-item label="优惠券id" prop="couponId">
-					<el-input v-model="queryParams.couponId" placeholder="couponId" clearable style="width: 200px;"
+					<el-input v-model="queryParams.couponId" placeholder="优惠券id" clearable style="width: 200px;"
 						@change="getList" />
 				</el-form-item>
 				<el-form-item label="价格" prop="price">
