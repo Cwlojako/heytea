@@ -128,9 +128,9 @@ function onConfirm() {
 	list.value = []
 }
 
-function onChecked(item) {
+function onChecked(item, isTarget) {
 	if (item.disabled) return
-	item.checked = !item.checked
+	if (!isTarget) item.checked = !item.checked
 	const checked = item.checked
 	if (isBatch.value) {
 		if (checked) {
@@ -254,12 +254,8 @@ const couponBtnDisabled = computed(() => {
 							<van-empty image="search" :description="idx === 0 ? '暂无可用优惠券' : '暂无不可用优惠券'" />
 						</div>
 						<div class="list_box" v-else>
-							<div 
-								v-for="item in tabList(idx, list)"
-								:key="item.id"
-								:class="['list_item', { disabled: item.disabled }]"
-								@click="onChecked(item)"
-							>
+							<div v-for="item in tabList(idx, list)" :key="item.id"
+								:class="['list_item', { disabled: item.disabled }]" @click="onChecked(item)">
 								<div v-if="item.disabled" class="disabled-badge">
 									不可用
 									<span v-if="item.disabledText">{{ `,${item.disabledText}` }}</span>
@@ -296,8 +292,9 @@ const couponBtnDisabled = computed(() => {
 											</div>
 										</section>
 										<section>
-											<van-checkbox v-model="item.checked" @click.native="onChecked(item)"
-												checked-color="#131313" :disabled="!!item.disabled"></van-checkbox>
+											<van-checkbox v-model="item.checked" checked-color="#131313"
+												:disabled="!!item.disabled"
+												@click.stop="onChecked(item, true)"></van-checkbox>
 										</section>
 									</div>
 								</section>
@@ -454,9 +451,11 @@ const couponBtnDisabled = computed(() => {
 							padding: 10px 0;
 							position: relative;
 							font-weight: bold;
+
 							&::after {
 								@include bottom-line(#ccc, 1px, dashed);
 							}
+
 							span {
 								margin-right: 10px;
 							}
@@ -512,7 +511,7 @@ const couponBtnDisabled = computed(() => {
 							}
 						}
 
-						
+
 					}
 				}
 			}

@@ -98,6 +98,11 @@ function onCheckSpec(i, item) {
 	if (!checked && item.is_mandatory) return
 	if (!i.is_enable) return showToast('该选项已售罄')
 	if (item.materials.some(s => s.checked)) {
+		let c = item.materials.find(f => f.checked)
+		if (c && c.price) {
+			productDetail.value.price = +productDetail.value.price - +c.price
+			productDetail.value.specPrice = productDetail.value.specPrice - +c.price
+		}
 		item.materials.forEach(e => e.checked = false)
 	}
 	i.checked = checked
@@ -140,8 +145,7 @@ function onCheckSpec(i, item) {
 
 	if (i.checked && +i.price) {
 		productDetail.value.price = +productDetail.value.price + +i.price
-	} else if (!i.checked && +i.price) {
-		productDetail.value.price = +productDetail.value.price - +i.price
+		productDetail.value.specPrice = (productDetail.value.specPrice || 0) + +i.price
 	}
 }
 
@@ -198,7 +202,8 @@ async function onRemarkConfirm() {
 			bind: [],
 			uuid: `s:|${skus[0].no}|${material_nos.join(',')}|||;-${item.id}`,
 			join_time: +new Date(),
-			user_infos: []
+			user_infos: [],
+			specPrice: item.specPrice || 0
 		}
 	})
 	try {
